@@ -9,8 +9,13 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Inicio'),
       ),
-      body: const Center(
-        child: Text('Bienvenido a la aplicación'),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/login');
+          },
+          child: const Text('Ir a iniciar sesión'),
+        ),
       ),
     );
   }
