@@ -18,10 +18,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Expanded(
             child: PageView(
               controller: _pageController,
-              children: const [
-                Center(
-                  child: Text('Página 1'),
+              children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/onboarding1.jpg',
+                      height: 250,
+                    ),
+                    const SizedBox(height: 30),
+                    const Text(
+                      '¡Bienvenido a nuestra app!',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Descubre todo lo que puedes hacer con nuestra aplicación de forma sencilla y rápida.',
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
+              ),
                 Center(
                   child: Text('Página 2'),
                 ),
