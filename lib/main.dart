@@ -1,3 +1,4 @@
+import 'package:dam_proyect/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dam_proyect/screens/home_screen.dart';
 import 'package:dam_proyect/screens/login_screen.dart';
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
       },
     );
   }
