@@ -217,16 +217,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: (_currentPage == 0 || _currentPage == 1)
                 ? TextButton(
               onPressed: () {
-                Navigator.pushReplacementNamed(
-                  context,
-                  '/login',
-                );
+                Navigator.pushReplacementNamed(context,'/login');
               },
               child: const Text('Saltar'),
             )
                 : null,
           ),
-
           const SizedBox(height: 20),
         ],
       ),
