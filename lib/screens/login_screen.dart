@@ -9,6 +9,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
 
+  bool _passwordVisible = false;
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,11 +121,21 @@ class _LoginScreenState extends State<LoginScreen> {
               // 7. CAMPO DE CONTRASEÑA
 
               TextField(
-                obscureText: true,
+                obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   hintText: 'Introduce tu contraseña',
                   prefixIcon: const Icon(
                     Icons.lock_outline,
+                  ),
+                  suffixIcon: IconButton(
+                      onPressed: (){
+                        setState(() {
+                          _passwordVisible = !_passwordVisible;
+                        });
+                      },
+                    icon: const Icon(
+                      Icons.visibility,
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
