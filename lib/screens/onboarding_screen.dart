@@ -166,7 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           onPressed: () {
                             Navigator.pushReplacementNamed(
                               context,
-                              '/login',
+                              '/register',
                             );
                           },
                           child: const Text(
@@ -217,7 +217,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: (_currentPage == 0 || _currentPage == 1)
                 ? TextButton(
               onPressed: () {
-                Navigator.pushReplacementNamed(context,'/login');
+                Navigator.pushReplacementNamed(context,'/register');
               },
               child: const Text('Saltar'),
             )
