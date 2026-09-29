@@ -18,11 +18,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Páginas del onboarding
+          // =========================
+          // PÁGINAS DEL ONBOARDING
+          // =========================
           Expanded(
             child: PageView(
               controller: _pageController,
 
+              // Permite deslizar con pantalla táctil y ratón
               scrollBehavior: const MaterialScrollBehavior().copyWith(
                 dragDevices: {
                   PointerDeviceKind.touch,
@@ -30,6 +33,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
 
+              // Actualizamos la página actual
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
@@ -37,7 +41,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
 
               children: [
-                // Página 1
+                // =========================
+                // PÁGINA 1
+                // =========================
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -72,7 +78,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Página 2
+                // =========================
+                // PÁGINA 2
+                // =========================
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -107,7 +115,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Página 3
+                // =========================
+                // PÁGINA 3
+                // =========================
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -175,7 +185,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          // Indicadores de página
+          // =========================
+          // INDICADORES DE PÁGINA
+          // =========================
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -194,12 +206,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
 
-          // Botón para saltar el onboarding
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-            child: const Text('Saltar'),
+          // =========================
+          // BOTÓN SALTAR
+          // =========================
+          // El espacio siempre mide 68 píxeles.
+          // En las páginas 1 y 2 mostramos "Saltar".
+          // En la página 3 dejamos el espacio vacío.
+          SizedBox(
+            height: 68,
+            child: (_currentPage == 0 || _currentPage == 1)
+                ? TextButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/login',
+                );
+              },
+              child: const Text('Saltar'),
+            )
+                : null,
           ),
 
           const SizedBox(height: 20),
