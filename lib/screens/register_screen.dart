@@ -231,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           content: Text('Cuenta creada correctamente'),
                         ),
                       );
-                      Navigator.pushReplacementNamed(context, '/home',);
+                      Navigator.pushReplacementNamed(context, '/homescreen',);
 
                     } on Exception catch (e) {
                       if (!mounted) return;
