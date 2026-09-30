@@ -198,6 +198,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () {
+
+                    if (_passwordController.text != _repeatPasswordController.text) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Las contraseñas no coinciden'),
+                        ),
+                      );
+                      return;
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
