@@ -10,4 +10,16 @@ class AuthService {
       password: password,
     );
   }
+  Future<UserCredential> login(
+      String email,
+      String password,
+      ) {
+    return _firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+  Future<void> logout() {
+    return _firebaseAuth.signOut();
+  }
 }
