@@ -76,6 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
 
               TextField(
+                controller: _nameController,
                 keyboardType: TextInputType.name,
                 decoration: InputDecoration(
                   hintText: 'Introduce tu nombre',
@@ -101,6 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
 
               TextField(
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   hintText: 'Introduce tu correo',
@@ -126,6 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
 
               TextField(
+                controller: _passwordController,
                 obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   hintText: 'Introduce una contraseña',
@@ -163,6 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
 
               TextField(
+                controller: _repeatPasswordController,
                 obscureText: !_repeatPasswordVisible,
                 decoration: InputDecoration(
                   hintText: 'Repite tu contraseña',
