@@ -32,13 +32,34 @@ class AuthService {
   Future<UserCredential> login(
       String email,
       String password,
-      ) {
-    return _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-  }
-  Future<void> logout() {
-    return _firebaseAuth.signOut();
+      ) async {
+    try {
+      return await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-credential') {
+        throw Exception(
+          'El correo o la contraseña no son correctos',
+        );
+      }
+
+      if (e.code == 'invalid-email') {
+        throw Exception(
+          'El correo electrónico no es válido',
+        );
+      }
+
+      if (e.code == 'user-disabled') {
+        throw Exception(
+          'Esta cuenta está deshabilitada',
+        );
+      }
+
+      throw Exception(
+        'No se ha podido iniciar sesión',
+      );
+    }
   }
 }

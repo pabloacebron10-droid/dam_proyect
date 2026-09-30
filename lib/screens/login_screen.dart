@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,6 +11,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
 
   bool _passwordVisible = false;
+  final AuthService _authService = AuthService();
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
 
   @override
@@ -90,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 5. CAMPO DE CORREO
 
               TextField(
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   hintText: 'Introduce tu correo',
@@ -121,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 7. CAMPO DE CONTRASEÑA
 
               TextField(
+                controller: _passwordController,
                 obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   hintText: 'Introduce tu contraseña',
@@ -169,9 +176,25 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Más adelante conectaremos
-                    // este botón con Firebase Auth.
+                  onPressed: () async {
+                    try {
+                      await _authService.login(_emailController.text, _passwordController.text,);
+
+                      if (!mounted) return;
+
+                      Navigator.pushReplacementNamed(context, '/homescreen',);
+
+                    } on Exception catch (e) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
@@ -226,5 +249,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
