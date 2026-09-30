@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repeatPasswordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -197,17 +199,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
+                    onPressed: () async {
+                      if (_passwordController.text !=
+                          _repeatPasswordController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Las contraseñas no coinciden'),
+                          ),
+                        );
+                        return;
+                      }
 
-                    if (_passwordController.text != _repeatPasswordController.text) {
+                      final error = await _authService.register(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
+
+                      if (error != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(error),
+                          ),
+                        );
+                        return;
+                      }
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Las contraseñas no coinciden'),
+                          content: Text('Cuenta creada correctamente'),
                         ),
                       );
-                      return;
-                    }
-                  },
+                    },
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
