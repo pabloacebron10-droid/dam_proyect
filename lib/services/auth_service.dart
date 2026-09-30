@@ -3,31 +3,29 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
-  Future<String?> register(
+  Future<UserCredential?> register(
       String email,
       String password,
       ) async {
     try {
-      await _firebaseAuth.createUserWithEmailAndPassword(
+      return await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        return 'Este correo ya está registrado';
+        throw Exception('Este correo ya está registrado');
       }
 
       if (e.code == 'weak-password') {
-        return 'La contraseña es demasiado débil';
+        throw Exception('La contraseña es demasiado débil');
       }
 
       if (e.code == 'invalid-email') {
-        return 'El correo electrónico no es válido';
+        throw Exception('El correo electrónico no es válido');
       }
 
-      return 'No se ha podido crear la cuenta';
+      throw Exception('No se ha podido crear la cuenta');
     }
   }
 

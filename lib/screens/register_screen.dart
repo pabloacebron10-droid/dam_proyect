@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dam_proyect/services/auth_service.dart';
+import '../models/perfil.dart';
+import '../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repeatPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -199,33 +202,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 height: 55,
                 child: ElevatedButton(
-                    onPressed: () async {
-                      if (_passwordController.text != _repeatPasswordController.text) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Las contraseñas no coinciden'),
-                          ),
-                        );
-                        return;
-                      }
+                  onPressed: () async {
+                    if (_passwordController.text !=
+                        _repeatPasswordController.text) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Las contraseñas no coinciden'),
+                        ),
+                      );
+                      return;
+                    }
 
-                      final error = await _authService.register(_emailController.text, _passwordController.text,);
+                    try {
+                      final credential = await _authService.register(_emailController.text, _passwordController.text,);
 
-                      if (error != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(error),
-                          ),
-                        );
-                        return;
-                      }
+                      final perfil = Perfil(
+                        uId: credential!.user!.uid,
+                        nombre: _nameController.text,
+                        email: _emailController.text,
+                      );
+
+                      await _firestoreService.saveProfile(perfil);
+
+                      if (!mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Cuenta creada correctamente'),
                         ),
                       );
-                    },
+                    } on Exception catch (e) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
+                      );
+                    }
+                  },
 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
