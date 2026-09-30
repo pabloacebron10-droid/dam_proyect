@@ -200,8 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 55,
                 child: ElevatedButton(
                     onPressed: () async {
-                      if (_passwordController.text !=
-                          _repeatPasswordController.text) {
+                      if (_passwordController.text != _repeatPasswordController.text) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Las contraseñas no coinciden'),
@@ -210,10 +209,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return;
                       }
 
-                      final error = await _authService.register(
-                        _emailController.text,
-                        _passwordController.text,
-                      );
+                      final error = await _authService.register(_emailController.text, _passwordController.text,);
 
                       if (error != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
