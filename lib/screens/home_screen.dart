@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/models/mensaje.dart';
 import 'package:dam_proyect/services/auth_service.dart';
+import 'package:dam_proyect/services/firestore_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -144,38 +147,91 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const Expanded(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 70,
-                  color: Colors.grey,
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'No tienes conversaciones',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+        Expanded(
+          child: StreamBuilder<List<Mensaje>>(
+            stream: _getReceivedMessages(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return const Center(
+                  child: Text(
+                    'Error al cargar los mensajes',
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Empieza una conversación para verla aquí.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey,
+                );
+              }
+
+              final mensajes = snapshot.data ?? [];
+
+              if (mensajes.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 70,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'No tienes mensajes',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Cuando recibas uno aparecerá aquí.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: mensajes.length,
+                itemBuilder: (context, index) {
+                  final mensaje = mensajes[index];
+
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.person),
+                    ),
+                    title: Text(
+                      mensaje.texto,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: const Text(
+                      'Mensaje recibido',
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ),
       ],
     );
+  }
+  Stream<List<Mensaje>> _getReceivedMessages() {
+    final user = _authService.getCurrentUser();
+
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    return _firestoreService.getReceivedMessages(user.uid);
   }
 }
