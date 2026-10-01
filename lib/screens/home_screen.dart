@@ -284,8 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
               : null,
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ChatScreen(
@@ -293,6 +293,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             );
+
+            if (!mounted) return;
+
+            final mensajesActualizados =
+            await _getReceivedMessages().first;
+
+            setState(() {
+              _mensajes = mensajesActualizados;
+            });
           },
         );
       },
