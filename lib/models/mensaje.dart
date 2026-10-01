@@ -4,6 +4,7 @@ class Mensaje {
   final String destinatarioId;
   final String texto;
   final DateTime fecha;
+  final bool leido;
 
   Mensaje({
     required this.id,
@@ -11,5 +12,6 @@ class Mensaje {
     required this.destinatarioId,
     required this.texto,
     required this.fecha,
+    required this.leido,
   });
 }

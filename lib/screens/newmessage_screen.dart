@@ -112,6 +112,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                       destinatarioId: perfil.uId,
                       texto: texto,
                       fecha: DateTime.now(),
+                      leido: false,
                     );
 
                     await _firestoreService.saveMessage(mensaje);
