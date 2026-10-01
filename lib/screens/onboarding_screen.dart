@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/onboarding_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -10,7 +11,7 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
-
+  final OnboardingService _onboardingService = OnboardingService();
   int _currentPage = 0;
 
   @override
@@ -206,17 +207,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
 
-          // =========================
-          // BOTÓN SALTAR
-          // =========================
-          // El espacio siempre mide 68 píxeles.
-          // En las páginas 1 y 2 mostramos "Saltar".
-          // En la página 3 dejamos el espacio vacío.
           SizedBox(
             height: 68,
             child: (_currentPage == 0 || _currentPage == 1)
                 ? TextButton(
-              onPressed: () {
+              onPressed: () async {
+                await _onboardingService.setOnboardingSeen();
+
+                if (!mounted) return;
                 Navigator.pushReplacementNamed(context,'/register');
               },
               child: const Text('Saltar'),
