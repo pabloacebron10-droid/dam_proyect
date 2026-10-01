@@ -69,4 +69,30 @@ class FirestoreService {
 
     return querySnapshot.docs.first.data();
   }
+  Stream<List<Mensaje>> getReceivedMessages(String userId) {
+    return _firestore
+        .collection('messages')
+        .withConverter<Mensaje>(
+      fromFirestore: (snapshot, _) => Mensaje(
+        id: snapshot.id,
+        remitenteId: snapshot['remitenteId'],
+        destinatarioId: snapshot['destinatarioId'],
+        texto: snapshot['texto'],
+        fecha: (snapshot['fecha'] as Timestamp).toDate(),
+      ),
+      toFirestore: (mensaje, _) => {
+        'remitenteId': mensaje.remitenteId,
+        'destinatarioId': mensaje.destinatarioId,
+        'texto': mensaje.texto,
+        'fecha': Timestamp.fromDate(mensaje.fecha),
+      },
+    )
+        .where('destinatarioId', isEqualTo: userId)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+          .map((document) => document.data())
+          .toList(),
+    );
+  }
 }
