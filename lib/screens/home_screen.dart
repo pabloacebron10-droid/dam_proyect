@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,6 +10,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +36,26 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black,
             ),
           ),
+          IconButton(
+            onPressed: () async {
+              await _authService.logout();
+
+              if (!mounted) return;
+
+              Navigator.pushReplacementNamed(
+                context,
+                '/login',
+              );
+            },
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Colors.black,
+            ),
+          ),
           const SizedBox(width: 8),
         ],
       ),
+
 
       body: _buildBody(),
 
@@ -74,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 
   Widget _buildBody() {
     if (_selectedIndex == 1) {
