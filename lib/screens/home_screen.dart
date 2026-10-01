@@ -60,7 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _buildBody(),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, '/newmessage',);
+        },
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         child: const Icon(Icons.chat_rounded),
