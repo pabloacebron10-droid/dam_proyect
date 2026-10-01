@@ -91,13 +91,8 @@ class FirestoreService {
         'leido': mensaje.leido,
       },
     )
-        .where('destinatarioId', isEqualTo: userId)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-          .map((document) => document.data())
-          .toList(),
-    );
+        .where('destinatarioId', isEqualTo: userId).orderBy('fecha', descending: true,).snapshots().map(
+          (snapshot) => snapshot.docs.map((document) => document.data()).toList(),);
   }
   Future<void> markMessageAsRead(String messageId) async {
     await _firestore
