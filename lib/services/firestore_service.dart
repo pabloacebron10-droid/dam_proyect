@@ -44,4 +44,29 @@ class FirestoreService {
     )
         .set(mensaje);
   }
+  Future<Perfil?> getProfileByEmail(String email) async {
+    final querySnapshot = await _firestore
+        .collection('profiles')
+        .withConverter<Perfil>(
+      fromFirestore: (snapshot, _) => Perfil(
+        uId: snapshot['uid'],
+        nombre: snapshot['nombre'],
+        email: snapshot['email'],
+      ),
+      toFirestore: (perfil, _) => {
+        'uid': perfil.uId,
+        'nombre': perfil.nombre,
+        'email': perfil.email,
+      },
+    )
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) {
+      return null;
+    }
+
+    return querySnapshot.docs.first.data();
+  }
 }
