@@ -34,12 +34,14 @@ class FirestoreService {
         destinatarioId: snapshot['destinatarioId'],
         texto: snapshot['texto'],
         fecha: (snapshot['fecha'] as Timestamp).toDate(),
+        leido: snapshot['leido'] ?? false,
       ),
       toFirestore: (mensaje, _) => {
         'remitenteId': mensaje.remitenteId,
         'destinatarioId': mensaje.destinatarioId,
         'texto': mensaje.texto,
         'fecha': Timestamp.fromDate(mensaje.fecha),
+        'leido': mensaje.leido,
       },
     )
         .set(mensaje);
@@ -79,12 +81,14 @@ class FirestoreService {
         destinatarioId: snapshot['destinatarioId'],
         texto: snapshot['texto'],
         fecha: (snapshot['fecha'] as Timestamp).toDate(),
+        leido: snapshot['leido'] ?? false,
       ),
       toFirestore: (mensaje, _) => {
         'remitenteId': mensaje.remitenteId,
         'destinatarioId': mensaje.destinatarioId,
         'texto': mensaje.texto,
         'fecha': Timestamp.fromDate(mensaje.fecha),
+        'leido': mensaje.leido,
       },
     )
         .where('destinatarioId', isEqualTo: userId)
@@ -94,5 +98,13 @@ class FirestoreService {
           .map((document) => document.data())
           .toList(),
     );
+  }
+  Future<void> markMessageAsRead(String messageId) async {
+    await _firestore
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'leido': true,
+    });
   }
 }
