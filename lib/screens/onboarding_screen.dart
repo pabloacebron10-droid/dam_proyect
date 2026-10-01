@@ -164,7 +164,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
+                            await _onboardingService.setOnboardingSeen();
+
+                            if (!mounted) return;
+
                             Navigator.pushReplacementNamed(
                               context,
                               '/register',
