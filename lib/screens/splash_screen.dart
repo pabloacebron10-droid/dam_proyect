@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/services/onboarding_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -8,16 +9,31 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final OnboardingService _onboardingService = OnboardingService();
+
   @override
   void initState() {
     super.initState();
 
     Future.delayed(
       const Duration(seconds: 2),
-          () {
+          () async {
+        final hasSeenOnboarding =
+        await _onboardingService.hasSeenOnboarding();
+
         if (!mounted) return;
 
-        Navigator.pushReplacementNamed(context, '/onboarding');
+        if (hasSeenOnboarding) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/login',
+          );
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            '/onboarding',
+          );
+        }
       },
     );
   }
