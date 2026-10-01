@@ -177,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () async {
+
                     try {
                       await _authService.login(_emailController.text, _passwordController.text,);
 

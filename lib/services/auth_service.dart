@@ -62,4 +62,8 @@ class AuthService {
       );
     }
   }
+  Future<void> logout() {
+    return _firebaseAuth.signOut();
+  }
 }
+
