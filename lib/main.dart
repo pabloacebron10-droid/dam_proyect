@@ -1,3 +1,4 @@
+import 'package:dam_proyect/screens/newmessage_screen.dart';
 import 'package:dam_proyect/screens/onboarding_screen.dart';
 import 'package:dam_proyect/screens/register_screen.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingScreen(),
         '/homescreen' : (context) => const HomeScreen(),
         '/register' : (context) => const RegisterScreen(),
+        '/newmessage': (context) => const NewMessageScreen(),
       },
     );
   }
