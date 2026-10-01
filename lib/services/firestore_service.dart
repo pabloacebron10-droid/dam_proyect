@@ -49,12 +49,12 @@ class FirestoreService {
         .collection('profiles')
         .withConverter<Perfil>(
       fromFirestore: (snapshot, _) => Perfil(
-        uId: snapshot['uid'],
+        uId: snapshot['uId'],
         nombre: snapshot['nombre'],
         email: snapshot['email'],
       ),
       toFirestore: (perfil, _) => {
-        'uid': perfil.uId,
+        'uId': perfil.uId,
         'nombre': perfil.nombre,
         'email': perfil.email,
       },
