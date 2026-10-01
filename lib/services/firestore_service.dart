@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dam_proyect/models/perfil.dart';
+import 'package:dam_proyect/models/mensaje.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -21,5 +22,26 @@ class FirestoreService {
       },
     )
         .set(perfil);
+  }
+  Future<void> saveMessage(Mensaje mensaje) async {
+    await _firestore
+        .collection('messages')
+        .doc(mensaje.id)
+        .withConverter<Mensaje>(
+      fromFirestore: (snapshot, _) => Mensaje(
+        id: snapshot.id,
+        remitenteId: snapshot['remitenteId'],
+        destinatarioId: snapshot['destinatarioId'],
+        texto: snapshot['texto'],
+        fecha: (snapshot['fecha'] as Timestamp).toDate(),
+      ),
+      toFirestore: (mensaje, _) => {
+        'remitenteId': mensaje.remitenteId,
+        'destinatarioId': mensaje.destinatarioId,
+        'texto': mensaje.texto,
+        'fecha': Timestamp.fromDate(mensaje.fecha),
+      },
+    )
+        .set(mensaje);
   }
 }
