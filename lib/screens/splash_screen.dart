@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dam_proyect/services/onboarding_service.dart';
+import 'package:dam_proyect/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,6 +11,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final OnboardingService _onboardingService = OnboardingService();
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -23,15 +25,25 @@ class _SplashScreenState extends State<SplashScreen> {
 
         if (!mounted) return;
 
-        if (hasSeenOnboarding) {
+        if (!hasSeenOnboarding) {
           Navigator.pushReplacementNamed(
             context,
-            '/login',
+            '/onboarding',
+          );
+          return;
+        }
+
+        final user = _authService.getCurrentUser();
+
+        if (user != null) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/homescreen',
           );
         } else {
           Navigator.pushReplacementNamed(
             context,
-            '/onboarding',
+            '/login',
           );
         }
       },

@@ -65,5 +65,8 @@ class AuthService {
   Future<void> logout() {
     return _firebaseAuth.signOut();
   }
+  User? getCurrentUser() {
+    return _firebaseAuth.currentUser;
+  }
 }
 
