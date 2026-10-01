@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dam_proyect/models/mensaje.dart';
+import 'package:dam_proyect/services/firestore_service.dart';
+
 
 class NewMessageScreen extends StatefulWidget {
   const NewMessageScreen({super.key});
@@ -8,11 +12,11 @@ class NewMessageScreen extends StatefulWidget {
 }
 
 class _NewMessageScreenState extends State<NewMessageScreen> {
-  final TextEditingController _destinatarioController =
-  TextEditingController();
 
-  final TextEditingController _mensajeController =
-  TextEditingController();
+  final TextEditingController _destinatarioController = TextEditingController();
+  final TextEditingController _mensajeController = TextEditingController();
+  final FirestoreService _firestoreService = FirestoreService();
+
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +59,88 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
             SizedBox(
               height: 55,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Más adelante guardaremos el mensaje en Firestore.
+                onPressed: () async {
+                  final email = _destinatarioController.text.trim();
+                  final texto = _mensajeController.text.trim();
+
+                  if (email.isEmpty || texto.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Completa el destinatario y el mensaje',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final perfil =
+                    await _firestoreService.getProfileByEmail(email);
+
+                    if (perfil == null) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'No existe ningún usuario con ese correo',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final usuarioActual = FirebaseAuth.instance.currentUser;
+
+                    if (usuarioActual == null) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'No hay ninguna sesión iniciada',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final mensaje = Mensaje(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      remitenteId: usuarioActual.uid,
+                      destinatarioId: perfil.uId,
+                      texto: texto,
+                      fecha: DateTime.now(),
+                    );
+
+                    await _firestoreService.saveMessage(mensaje);
+
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Mensaje enviado correctamente',
+                        ),
+                      ),
+                    );
+
+                    Navigator.pop(context);
+                  } on Exception catch (e) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          e.toString().replaceFirst(
+                            'Exception: ',
+                            '',
+                          ),
+                        ),
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.send),
                 label: const Text(
