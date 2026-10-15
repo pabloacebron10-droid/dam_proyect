@@ -5,6 +5,7 @@ import 'package:dam_proyect/models/mensaje.dart';
 import 'package:dam_proyect/services/auth_service.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
 import 'package:dam_proyect/screens/chat_screen.dart';
+import 'package:dam_proyect/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -166,15 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_selectedIndex == 2) {
-      return const Center(
-        child: Text(
-          'Mi perfil',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
+      return const ProfileScreen();
     }
 
     return _buildChats();

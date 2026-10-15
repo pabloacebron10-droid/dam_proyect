@@ -10,32 +10,41 @@ class FirestoreService {
         .collection('profiles')
         .doc(perfil.uId)
         .withConverter<Perfil>(
-      fromFirestore: (snapshot, _) => Perfil(
-        uId: snapshot['uId'],
-        nombre: snapshot['nombre'],
-        email: snapshot['email'],
-      ),
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Perfil(
+          uId: data?['uId'] ?? snapshot.id,
+          nombre: data?['nombre'] ?? '',
+          email: data?['email'] ?? '',
+          fotoUrl: data?['fotoUrl'],
+        );
+      },
       toFirestore: (perfil, _) => {
         'uId': perfil.uId,
         'nombre': perfil.nombre,
         'email': perfil.email,
+        if (perfil.fotoUrl != null) 'fotoUrl': perfil.fotoUrl,
       },
     )
-        .set(perfil);
+        .set(perfil, SetOptions(merge: true));
   }
+
   Future<void> saveMessage(Mensaje mensaje) async {
     await _firestore
         .collection('messages')
         .doc(mensaje.id)
         .withConverter<Mensaje>(
-      fromFirestore: (snapshot, _) => Mensaje(
-        id: snapshot.id,
-        remitenteId: snapshot['remitenteId'],
-        destinatarioId: snapshot['destinatarioId'],
-        texto: snapshot['texto'],
-        fecha: (snapshot['fecha'] as Timestamp).toDate(),
-        leido: snapshot['leido'] ?? false,
-      ),
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Mensaje(
+          id: snapshot.id,
+          remitenteId: data?['remitenteId'] ?? '',
+          destinatarioId: data?['destinatarioId'] ?? '',
+          texto: data?['texto'] ?? '',
+          fecha: (data?['fecha'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          leido: data?['leido'] ?? false,
+        );
+      },
       toFirestore: (mensaje, _) => {
         'remitenteId': mensaje.remitenteId,
         'destinatarioId': mensaje.destinatarioId,
@@ -46,19 +55,25 @@ class FirestoreService {
     )
         .set(mensaje);
   }
+
   Future<Perfil?> getProfileByEmail(String email) async {
     final querySnapshot = await _firestore
         .collection('profiles')
         .withConverter<Perfil>(
-      fromFirestore: (snapshot, _) => Perfil(
-        uId: snapshot['uId'],
-        nombre: snapshot['nombre'],
-        email: snapshot['email'],
-      ),
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Perfil(
+          uId: data?['uId'] ?? snapshot.id,
+          nombre: data?['nombre'] ?? '',
+          email: data?['email'] ?? '',
+          fotoUrl: data?['fotoUrl'],
+        );
+      },
       toFirestore: (perfil, _) => {
         'uId': perfil.uId,
         'nombre': perfil.nombre,
         'email': perfil.email,
+        if (perfil.fotoUrl != null) 'fotoUrl': perfil.fotoUrl,
       },
     )
         .where('email', isEqualTo: email)
@@ -71,18 +86,52 @@ class FirestoreService {
 
     return querySnapshot.docs.first.data();
   }
+
+  Future<Perfil?> getProfileByUid(String uId) async {
+    final docSnapshot = await _firestore
+        .collection('profiles')
+        .doc(uId)
+        .withConverter<Perfil>(
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Perfil(
+          uId: data?['uId'] ?? snapshot.id,
+          nombre: data?['nombre'] ?? '',
+          email: data?['email'] ?? '',
+          fotoUrl: data?['fotoUrl'],
+        );
+      },
+      toFirestore: (perfil, _) => {
+        'uId': perfil.uId,
+        'nombre': perfil.nombre,
+        'email': perfil.email,
+        if (perfil.fotoUrl != null) 'fotoUrl': perfil.fotoUrl,
+      },
+    )
+        .get();
+
+    if (!docSnapshot.exists) {
+      return null;
+    }
+
+    return docSnapshot.data();
+  }
+
   Stream<List<Mensaje>> getReceivedMessages(String userId) {
     return _firestore
         .collection('messages')
         .withConverter<Mensaje>(
-      fromFirestore: (snapshot, _) => Mensaje(
-        id: snapshot.id,
-        remitenteId: snapshot['remitenteId'],
-        destinatarioId: snapshot['destinatarioId'],
-        texto: snapshot['texto'],
-        fecha: (snapshot['fecha'] as Timestamp).toDate(),
-        leido: snapshot['leido'] ?? false,
-      ),
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Mensaje(
+          id: snapshot.id,
+          remitenteId: data?['remitenteId'] ?? '',
+          destinatarioId: data?['destinatarioId'] ?? '',
+          texto: data?['texto'] ?? '',
+          fecha: (data?['fecha'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          leido: data?['leido'] ?? false,
+        );
+      },
       toFirestore: (mensaje, _) => {
         'remitenteId': mensaje.remitenteId,
         'destinatarioId': mensaje.destinatarioId,
@@ -91,9 +140,15 @@ class FirestoreService {
         'leido': mensaje.leido,
       },
     )
-        .where('destinatarioId', isEqualTo: userId).orderBy('fecha', descending: true,).snapshots().map(
-          (snapshot) => snapshot.docs.map((document) => document.data()).toList(),);
+        .where('destinatarioId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+          final mensajes = snapshot.docs.map((document) => document.data()).toList();
+          mensajes.sort((a, b) => b.fecha.compareTo(a.fecha));
+          return mensajes;
+        });
   }
+
   Future<void> markMessageAsRead(String messageId) async {
     await _firestore
         .collection('messages')

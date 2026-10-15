@@ -18,10 +18,10 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     Future.delayed(
-      const Duration(seconds: 2),
-          () async {
+      const Duration(seconds: 3),
+      () async {
         final hasSeenOnboarding =
-        await _onboardingService.hasSeenOnboarding();
+            await _onboardingService.hasSeenOnboarding();
 
         if (!mounted) return;
 
@@ -53,8 +53,61 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: const Center(
-        child: Text('Cargando...'),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.network(
+            'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmV6MTM5cXRrbzdsNmp2bGhyamNseDRwd3k4MTNtNnE3bzRpb3kzZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/wkPBxvetT2UUqSukUE/giphy.webp',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                }
+
+                return const SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Error al cargar el GIF: $error');
+
+                return const SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: Center(
+                    child: Text(
+                      'No se pudo cargar el GIF',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Cargando...',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
