@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:dam_proyect/models/trip_preferences.dart';
 
 class TripDetailScreen extends StatefulWidget {
-  final String city;
-  final LatLng location;
-  final double radiusKm;
-  final int tripDays;
+  final TripPreferences preferences;
 
   const TripDetailScreen({
     super.key,
-    required this.city,
-    required this.location,
-    required this.radiusKm,
-    required this.tripDays,
+    required this.preferences,
   });
 
   @override
@@ -20,75 +14,92 @@ class TripDetailScreen extends StatefulWidget {
 }
 
 class _TripDetailScreenState extends State<TripDetailScreen> {
-  String _activeCategory = 'restaurantes'; // 'restaurantes', 'hotel', 'apartamento', 'ocio'
+  String _activeCategory = 'restaurantes';
 
   List<Map<String, String>> _getCategoryResults() {
-    final cityName = widget.city.split(',').first.trim();
+    final prefs = widget.preferences;
+    final cityName = prefs.city.split(',').first.trim();
 
     if (_activeCategory == 'restaurantes') {
-      final totalCount = 3 + widget.tripDays;
+      final totalCount = 3 + prefs.tripDays;
+      final styleName = prefs.diningStyle.toUpperCase();
+      final priceSymbol = prefs.diningPrice == 'economico'
+          ? '€'
+          : prefs.diningPrice == 'lujo'
+              ? '€€€'
+              : '€€';
+
       return List.generate(totalCount, (index) {
         if (index < 3) {
           return {
-            'title': 'Restaurante Top #${index + 1} en $cityName',
-            'subtitle': 'Gastronomía de alta calidad • Top Recomendación',
-            'tag': 'Top 3 General',
+            'title': 'Restaurante $styleName Top #${index + 1} en $cityName',
+            'subtitle': 'Selección de estilo $styleName acorde a tus preferencias',
+            'tag': 'Top 3 $styleName',
             'rating': '4.${9 - index}',
-            'price': '€€€',
+            'price': priceSymbol,
           };
         } else {
           final dayNum = index - 2;
           return {
-            'title': 'Restaurante Recomendado - Día $dayNum',
-            'subtitle': 'Plato especial y menú degustación para el día $dayNum',
+            'title': 'Restaurante $styleName - Día $dayNum',
+            'subtitle': 'Sugerencia gastronómica $styleName para la comida del Día $dayNum',
             'tag': 'Sugerencia Día $dayNum',
             'rating': '4.7',
-            'price': '€€',
+            'price': priceSymbol,
           };
         }
       });
     } else if (_activeCategory == 'hotel') {
+      final priceSymbol = prefs.lodgingPrice == 'economico'
+          ? '€'
+          : prefs.lodgingPrice == 'lujo'
+              ? '€€€€'
+              : '€€€';
+      final vibesText = prefs.lodgingVibes.join(', ').toUpperCase();
+
       return [
         {
-          'title': 'Grand Hotel $cityName & Spa',
-          'subtitle': 'La mejor opción hotelera recomendada en el centro de $cityName',
-          'tag': 'Mejor Opción Hotel',
+          'title': 'Grand Hotel $cityName',
+          'subtitle': 'Alojamiento seleccionado con ambiente [$vibesText]',
+          'tag': 'Recomendación Hotel',
           'rating': '4.9',
-          'price': '€€€€',
+          'price': priceSymbol,
         },
       ];
     } else if (_activeCategory == 'apartamento') {
+      final priceSymbol = prefs.lodgingPrice == 'economico'
+          ? '€'
+          : prefs.lodgingPrice == 'lujo'
+              ? '€€€'
+              : '€€';
+
       return [
         {
-          'title': 'Apartamento Turístico Premium $cityName',
-          'subtitle': 'Apartamento completo totalmente equipado para ${widget.tripDays} días de estancia',
-          'tag': 'Mejor Apartamento',
+          'title': 'Apartamento Turístico $cityName',
+          'subtitle': 'Apartamento completo para ${prefs.tripDays} días de estancia con ambiente ideal',
+          'tag': 'Recomendación Apartamento',
           'rating': '4.8',
-          'price': '€€',
+          'price': priceSymbol,
         },
       ];
     } else {
+      final paceText = prefs.pace.toUpperCase();
+      final actText = prefs.activityTypes.join(', ').toUpperCase();
+
       return [
         {
-          'title': 'Ruta Imprescindible por $cityName',
-          'subtitle': 'Recorrido por las atracciones principales adaptado a ${widget.tripDays} días',
-          'tag': 'Imperdible',
+          'title': 'Ruta de Ocio ($actText) en $cityName',
+          'subtitle': 'Planificación a ritmo $paceText adaptado a ${prefs.tripDays} días de viaje',
+          'tag': 'Ritmo $paceText',
           'rating': '4.9',
           'price': 'Gratis',
         },
         {
-          'title': 'Museo y Centro Cultural de $cityName',
-          'subtitle': 'Exposiciones y patrimonio histórico',
-          'tag': 'Cultura',
+          'title': 'Experiencia Cultural y Destacados de $cityName',
+          'subtitle': 'Cultura y principales puntos de interés dentro del radio de ${prefs.radiusKm.toStringAsFixed(1)} km',
+          'tag': 'Puntos de Interés',
           'rating': '4.8',
           'price': '€15',
-        },
-        {
-          'title': 'Paseo Guiado y Mirador Panorámico',
-          'subtitle': 'Las mejores vistas de la ciudad al atardecer',
-          'tag': 'Actividad',
-          'rating': '4.7',
-          'price': '€10',
         },
       ];
     }
@@ -96,6 +107,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final prefs = widget.preferences;
     final results = _getCategoryResults();
 
     return Scaffold(
@@ -104,7 +116,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         title: Text(
-          widget.city.split(',').first,
+          prefs.city.split(',').first,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -123,7 +135,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        widget.city,
+                        prefs.city,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -133,18 +145,25 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Chip(
                       avatar: const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
-                      label: Text('${widget.tripDays} ${widget.tripDays == 1 ? "día" : "días"} de viaje'),
+                      label: Text('${prefs.tripDays} ${prefs.tripDays == 1 ? "día" : "días"}'),
                       backgroundColor: Colors.deepPurple.shade50,
                       side: BorderSide.none,
                     ),
-                    const SizedBox(width: 10),
                     Chip(
                       avatar: const Icon(Icons.radar, size: 16, color: Colors.deepPurple),
-                      label: Text('Radio ${widget.radiusKm.toStringAsFixed(1)} km'),
+                      label: Text('Radio ${prefs.radiusKm.toStringAsFixed(1)} km'),
+                      backgroundColor: Colors.deepPurple.shade50,
+                      side: BorderSide.none,
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.restaurant, size: 16, color: Colors.deepPurple),
+                      label: Text(prefs.diningStyle.toUpperCase()),
                       backgroundColor: Colors.deepPurple.shade50,
                       side: BorderSide.none,
                     ),
@@ -163,7 +182,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 children: [
                   _buildCategoryButton(
                     id: 'restaurantes',
-                    label: '🍽️ Restaurantes (${3 + widget.tripDays})',
+                    label: '🍽️ Restaurantes (${3 + prefs.tripDays})',
                   ),
                   _buildCategoryButton(
                     id: 'hotel',
