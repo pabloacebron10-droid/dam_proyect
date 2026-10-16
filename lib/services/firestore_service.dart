@@ -117,6 +117,31 @@ class FirestoreService {
     return docSnapshot.data();
   }
 
+  Future<List<Perfil>> getAllProfiles() async {
+    final querySnapshot = await _firestore
+        .collection('profiles')
+        .withConverter<Perfil>(
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Perfil(
+          uId: data?['uId'] ?? snapshot.id,
+          nombre: data?['nombre'] ?? '',
+          email: data?['email'] ?? '',
+          fotoUrl: data?['fotoUrl'],
+        );
+      },
+      toFirestore: (perfil, _) => {
+        'uId': perfil.uId,
+        'nombre': perfil.nombre,
+        'email': perfil.email,
+        if (perfil.fotoUrl != null) 'fotoUrl': perfil.fotoUrl,
+      },
+    )
+        .get();
+
+    return querySnapshot.docs.map((doc) => doc.data()).toList();
+  }
+
   Stream<List<Mensaje>> getReceivedMessages(String userId) {
     return _firestore
         .collection('messages')
@@ -141,6 +166,38 @@ class FirestoreService {
       },
     )
         .where('destinatarioId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+          final mensajes = snapshot.docs.map((document) => document.data()).toList();
+          mensajes.sort((a, b) => b.fecha.compareTo(a.fecha));
+          return mensajes;
+        });
+  }
+
+  Stream<List<Mensaje>> getSentMessages(String userId) {
+    return _firestore
+        .collection('messages')
+        .withConverter<Mensaje>(
+      fromFirestore: (snapshot, _) {
+        final data = snapshot.data();
+        return Mensaje(
+          id: snapshot.id,
+          remitenteId: data?['remitenteId'] ?? '',
+          destinatarioId: data?['destinatarioId'] ?? '',
+          texto: data?['texto'] ?? '',
+          fecha: (data?['fecha'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          leido: data?['leido'] ?? false,
+        );
+      },
+      toFirestore: (mensaje, _) => {
+        'remitenteId': mensaje.remitenteId,
+        'destinatarioId': mensaje.destinatarioId,
+        'texto': mensaje.texto,
+        'fecha': Timestamp.fromDate(mensaje.fecha),
+        'leido': mensaje.leido,
+      },
+    )
+        .where('remitenteId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
           final mensajes = snapshot.docs.map((document) => document.data()).toList();
