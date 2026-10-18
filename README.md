@@ -1,218 +1,263 @@
+# dam_proyect
 
-# DAM Proyect — Fase 1: El arranque de la aplicación
-
-Proyecto de 2.º de Desarrollo de Aplicaciones Multiplataforma (DAM).
-
-**Módulos:** 0486 Acceso a Datos (AD), 0489 Programación Multimedia y Dispositivos Móviles (PMDM) y 0490 Programación de Servicios y Procesos (PSP).
+**Autor:** Pablo Acebron  
+**Repositorio:** [dam_proyect en GitHub](https://github.com/pabloacebron10-droid/dam_proyect)  
+**Etapa:** 2.º DAM — Fase 1: El arranque de la aplicación  
+**Módulos:** 0486 AD y 0489 PMDM
 
 ## 1. Descripción del proyecto
 
-`dam_proyect` es una aplicación desarrollada con Flutter y Dart. Esta primera fase establece la estructura inicial, la entrada a la aplicación, el acceso de usuarios, la conexión con Firebase, el almacenamiento de datos y la navegación entre pantallas.
+`dam_proyect` es una aplicación multiplataforma desarrollada con Flutter y Dart. Su objetivo es ofrecer una aplicación navegable que permita gestionar perfiles, enviar mensajes y explorar información relacionada con viajes.
 
-El objetivo es disponer de un prototipo navegable que pueda ejecutarse y probarse tanto en Android como en un navegador web.
+La aplicación integra Firebase para la autenticación y el almacenamiento de datos. Se ha probado tanto en un emulador Android como en un navegador web.
+
+Las principales funcionalidades son:
+
+- Pantalla inicial (*splash*).
+- Onboarding que se muestra únicamente la primera vez, con opción para saltarlo.
+- Registro e inicio de sesión.
+- Gestión del perfil del usuario.
+- Exploración y consulta de información relacionada con viajes.
+- Creación y envío de mensajes.
+- Chat y comunicación mediante mensajes.
+- Navegación entre las distintas pantallas.
+- Lectura y escritura de datos en Firebase.
 
 ## 2. Tecnologías utilizadas
 
-- Flutter y Dart.
-- Android Studio.
-- Firebase Authentication para el registro y el acceso, si está configurado.
-- Cloud Firestore para el almacenamiento de datos, si está configurado.
-- Git y GitHub para el control de versiones.
+- **Flutter:** desarrollo de la interfaz multiplataforma.
+- **Dart:** lenguaje de programación.
+- **Firebase Authentication:** gestión de la autenticación de usuarios.
+- **Cloud Firestore:** almacenamiento y consulta de perfiles y mensajes.
+- **Firebase Storage:** servicio integrado en la aplicación mediante la capa de servicios para operaciones de almacenamiento de archivos.
+- **FlutterFire:** configuración e integración de Firebase con Flutter.
+- **Git y GitHub:** control de versiones y alojamiento del repositorio.
 
 ## 3. Estructura del proyecto
 
-El código de la aplicación se organiza en carpetas según la responsabilidad de cada elemento:
+El código está organizado en modelos, pantallas y servicios para separar las responsabilidades de la aplicación.
 
 ```text
 lib/
+├── firebase_options.dart
 ├── main.dart
 ├── models/
+│   ├── mensaje.dart
+│   ├── perfil.dart
+│   └── trip_preferences.dart
 ├── screens/
+│   ├── chat_screen.dart
+│   ├── home_screen.dart
+│   ├── login_screen.dart
+│   ├── map_explore_screen.dart
+│   ├── newmessage_screen.dart
+│   ├── onboarding_screen.dart
+│   ├── profile_screen.dart
+│   ├── register_screen.dart
+│   ├── splash_screen.dart
+│   ├── trip_detail_screen.dart
+│   └── trip_wizard_screen.dart
 └── services/
+    ├── auth_service.dart
+    ├── firestore_service.dart
+    ├── onboarding_service.dart
+    └── storage_service.dart
 ```
 
-- **`main.dart`:** punto de entrada de la aplicación y configuración general de Flutter.
-- **`models/`:** clases que representan los datos utilizados por la aplicación.
-- **`screens/`:** pantallas e interfaces que ve e utiliza el usuario.
-- **`services/`:** lógica para acceder a Firebase, gestionar la autenticación y realizar operaciones con los datos.
+### Responsabilidad de cada carpeta
 
-Esta separación facilita el mantenimiento, evita mezclar la interfaz con el acceso a datos y permite reutilizar la lógica de los servicios.
+- **`models/`:** contiene las clases que representan los datos de la aplicación, como los mensajes, los perfiles y las preferencias de viaje.
+- **`screens/`:** contiene las pantallas con las que interactúa el usuario.
+- **`services/`:** agrupa la lógica para trabajar con autenticación, Firestore, onboarding y almacenamiento.
+- **`main.dart`:** contiene el punto de entrada y la configuración principal de la aplicación.
+- **`firebase_options.dart`:** contiene las opciones de configuración generadas para conectar Flutter con Firebase.
 
-> Esta estructura es orientativa: debe coincidir con las carpetas que existan realmente en el repositorio.
+Esta organización facilita el mantenimiento del código, evita concentrar toda la lógica en un único archivo y permite ampliar la aplicación en futuras fases.
 
 ## 4. Requisitos previos
 
-Para ejecutar el proyecto en un equipo limpio se necesita:
+Para ejecutar el proyecto se necesita:
 
-- Flutter instalado y añadido al PATH.
-- Dart incluido con Flutter.
-- Android Studio y, para las pruebas Android, un emulador configurado.
-- Google Chrome u otro navegador compatible con Flutter Web.
+- Flutter instalado.
+- Dart, incluido en la instalación de Flutter.
 - Git.
-- Acceso a Firebase y los archivos de configuración necesarios, si el proyecto utiliza sus servicios.
+- Android Studio y un emulador Android, si se quiere ejecutar en Android.
+- Un navegador compatible, para ejecutar la versión web.
+- Acceso al proyecto de Firebase utilizado por la aplicación.
+- La configuración de Firebase necesaria para cada plataforma.
 
-Comprobar la instalación:
+Para comprobar la instalación de Flutter:
 
 ```bash
 flutter doctor
-flutter --version
-git --version
 ```
 
-## 5. Cómo descargar y arrancar el proyecto
+## 5. Instalación y ejecución
 
-Clonar el repositorio:
+### 5.1. Descargar el repositorio
+
+Clonar el repositorio y acceder a la carpeta del proyecto:
 
 ```bash
-git clone URL_DEL_REPOSITORIO
+git clone https://github.com/pabloacebron10-droid/dam_proyect.git
 cd dam_proyect
 ```
 
-Instalar las dependencias:
+### 5.2. Instalar las dependencias
+
+Ejecutar:
 
 ```bash
 flutter pub get
 ```
 
-Comprobar posibles errores de análisis:
+### 5.3. Configurar Firebase
 
-```bash
-flutter analyze
-```
+El proyecto utiliza FlutterFire para la integración con Firebase.
 
-Ejecutar en Chrome:
+El archivo `firebase_options.dart` contiene las opciones de configuración utilizadas por la aplicación. Para ejecutar el proyecto en un equipo nuevo, es necesario disponer de la configuración correspondiente al proyecto de Firebase y comprobar que las aplicaciones Android y web estén configuradas cuando corresponda.
 
-```bash
-flutter run -d chrome
-```
+También se deben habilitar los métodos de autenticación utilizados y comprobar que Cloud Firestore esté disponible.
 
-Ejecutar en Android:
+**Seguridad y configuración:**
 
-1. Abrir Android Studio.
-2. Iniciar un emulador Android o conectar un dispositivo con depuración USB.
-3. Comprobar los dispositivos disponibles:
+- No incluir contraseñas, claves privadas ni credenciales de administración en el repositorio.
+- Revisar los archivos de configuración de cada plataforma antes de publicarlos.
+- No utilizar las reglas de prueba de Firestore en producción.
+- Configurar reglas que permitan únicamente las operaciones autorizadas.
+
+### 5.4. Ejecutar en Android
+
+Iniciar un emulador desde Android Studio y comprobar los dispositivos disponibles:
 
 ```bash
 flutter devices
 ```
 
-4. Ejecutar la aplicación:
+Ejecutar la aplicación:
 
 ```bash
 flutter run
 ```
 
-Si Firebase está integrado, antes de ejecutar la aplicación deben instalarse los archivos de configuración correspondientes y comprobarse que el proyecto de Firebase utilizado es el correcto.
+Si hay varios dispositivos conectados, seleccionar el emulador correspondiente.
 
-## 6. Pantallas y navegación
+### 5.5. Ejecutar en navegador
 
-La aplicación utiliza rutas declaradas en `MaterialApp` para organizar la navegación.
+Para iniciar la aplicación en Chrome:
 
-Las pantallas previstas para esta fase son:
+```bash
+flutter run -d chrome
+```
 
-- **Splash:** presentación inicial mientras se comprueba el estado de la aplicación.
-- **Onboarding:** explicación inicial de la aplicación para nuevos usuarios.
-- **Login:** acceso mediante correo electrónico y contraseña.
-- **Registro:** creación de una cuenta.
-- **Home:** pantalla principal después del acceso.
-- **Secciones de contenido:** pantallas para consultar los datos de la aplicación.
+La configuración de Firebase y las dependencias utilizadas deben ser compatibles con la plataforma web.
 
-La lista anterior debe ajustarse a las pantallas y rutas implementadas realmente.
+## 6. Firebase y gestión de datos
 
-El splash debe contemplar los estados de carga y error de la imagen. Si la imagen remota no se puede descargar, la aplicación debe mostrar una alternativa y continuar funcionando.
+### 6.1. Autenticación
 
-El onboarding debe mostrarse únicamente la primera vez, permitir saltarlo y guardar la preferencia de que ya se ha completado.
+La autenticación permite gestionar el acceso de los usuarios a la aplicación.
 
-## 7. Firebase y persistencia
+Las operaciones de autenticación se organizan en `services/auth_service.dart`, mientras que las pantallas de acceso y registro se encuentran en:
 
-La aplicación puede utilizar los siguientes servicios de Firebase:
+- `screens/login_screen.dart`
+- `screens/register_screen.dart`
 
-- **Firebase Authentication:** registro, inicio de sesión y cierre de sesión.
-- **Cloud Firestore:** lectura y escritura de perfiles y contenido.
+La aplicación contempla el registro, el inicio de sesión y el cierre de sesión, así como la gestión de errores de autenticación.
 
-La configuración debe estar vinculada al proyecto de Firebase correspondiente. No se deben publicar credenciales privadas, claves de cuentas de servicio ni archivos locales sensibles.
+### 6.2. Cloud Firestore
 
-### Archivos de configuración
+La aplicación utiliza Cloud Firestore para guardar y consultar información.
 
-Dependiendo de la plataforma y del método de configuración, pueden ser necesarios:
+Las colecciones utilizadas son:
 
-- `android/app/google-services.json` para Android.
-- `lib/firebase_options.dart` si se utiliza FlutterFire CLI.
-- Configuración web de Firebase cuando sea necesaria para la plataforma web.
+- **`profiles`:** información de los perfiles de usuario.
+- **`messages`:** información de los mensajes enviados.
 
-La presencia de estos archivos depende de cómo se haya configurado el proyecto. Los archivos generados con identificadores de aplicación o configuración pública de Firebase no equivalen por sí solos a una contraseña privada. Deben revisarse igualmente las reglas de Firestore, las restricciones de las claves y los archivos que contienen secretos.
+El acceso a los datos se organiza en `services/firestore_service.dart`.
 
-Los archivos privados y locales no deben subirse al repositorio. Se debe revisar `.gitignore` y documentar los pasos necesarios para obtener la configuración en un equipo nuevo.
+Durante las pruebas se ha comprobado el envío de mensajes y que la información de los perfiles y los mensajes queda guardada en Firebase.
 
-### Modelos y conversión de datos
+### 6.3. Modelos y conversión tipada
 
-Los datos deben representarse mediante clases del directorio `models/`.
+Los modelos de datos se encuentran en la carpeta `models/`:
 
-Cuando se trabaje con Firestore, se utilizarán conversores tipados mediante `withConverter` para transformar los documentos en objetos Dart y convertir los objetos en documentos al escribirlos.
+- `mensaje.dart`
+- `perfil.dart`
+- `trip_preferences.dart`
 
-Las colecciones, los modelos y los campos concretos deben documentarse una vez comprobados en el código y en Firebase.
+El proyecto utiliza `withConverter` para trabajar con datos tipados en Firestore, convirtiendo los documentos a los modelos correspondientes y los modelos a los datos que se guardan.
 
-## 8. Gestión de recursos
+Esta estrategia facilita el tratamiento de los datos y reduce la necesidad de trabajar directamente con mapas sin tipar.
 
-Los servicios que abran suscripciones a Firestore deben cancelarlas cuando ya no se necesiten, por ejemplo, en `dispose()` de la pantalla que las mantiene.
+### 6.4. Almacenamiento de archivos
 
-Al cerrar sesión se debe cerrar la sesión de Firebase Authentication y evitar que queden escuchas o recursos activos innecesarios.
+La lógica de almacenamiento se organiza en `services/storage_service.dart`.
 
-La implementación concreta debe comprobarse en el código antes de considerar completado este apartado.
+La configuración y el uso de Firebase Storage deben mantenerse vinculados al proyecto de Firebase correspondiente y a sus reglas de acceso.
 
-## 9. Pruebas de funcionamiento
+## 7. Navegación de la aplicación
 
-La aplicación debe probarse en Android y en navegador.
+Las rutas declaradas en la configuración de la aplicación permiten acceder a las pantallas principales:
 
-La siguiente tabla es una plantilla para registrar las pruebas realizadas. Hay que completar el resultado después de ejecutar cada prueba.
+| Ruta | Pantalla |
+|---|---|
+| `/splash` | `SplashScreen` |
+| `/login` | `LoginScreen` |
+| `/onboarding` | `OnboardingScreen` |
+| `/homescreen` | `HomeScreen` |
+| `/register` | `RegisterScreen` |
+| `/newmessage` | `NewMessageScreen` |
 
-| Prueba | Resultado esperado | Resultado obtenido |
-|---|---|---|
-| Arranque en Chrome | La aplicación se inicia sin quedarse en blanco. | Pendiente |
-| Arranque en Android | La aplicación se inicia en el emulador. | Pendiente |
-| Carga de imagen del splash | Se muestra la imagen remota. | Pendiente |
-| Error de imagen | Se muestra una alternativa visible. | Pendiente |
-| Primera apertura | Se presenta el onboarding. | Pendiente |
-| Saltar onboarding | Se accede al siguiente flujo. | Pendiente |
-| Apertura posterior | No se repite el onboarding si ya se completó. | Pendiente |
-| Registro válido | Se crea la cuenta. | Pendiente |
-| Correo ya registrado | Se muestra un mensaje de error comprensible. | Pendiente |
-| Contraseña débil | Se muestra un mensaje de error comprensible. | Pendiente |
-| Credenciales incorrectas | Se informa del fallo de acceso. | Pendiente |
-| Cierre de sesión | Se cierra la sesión y se vuelve al acceso. | Pendiente |
-| Lectura de Firestore | Se muestran los datos almacenados. | Pendiente |
-| Colección vacía | Se muestra un estado vacío. | Pendiente |
-| Error de conexión | Se muestra un estado de error recuperable. | Pendiente |
-| Navegación entre secciones | Las rutas llevan a las pantallas correctas. | Pendiente |
+Además, el proyecto contiene pantallas para el chat, el perfil, la exploración del mapa, el detalle de un viaje y el asistente para configurar un viaje.
 
-### Diferencias entre plataformas
+La navegación se configura mediante las rutas de `MaterialApp`, facilitando la organización del recorrido entre pantallas.
 
-Registrar aquí las diferencias observadas entre el emulador Android y Chrome: permisos, configuración de Firebase, comportamiento de imágenes, dimensiones de pantalla o cualquier otro problema reproducible.
+## 8. Onboarding
 
-No se debe afirmar que ambas plataformas funcionan correctamente hasta haber realizado las pruebas.
+El onboarding está implementado en `screens/onboarding_screen.dart` y utiliza `services/onboarding_service.dart` para gestionar el estado de visualización.
+
+Se ha comprobado que las pantallas de introducción se muestran únicamente la primera vez y que existe una opción para saltarlas.
+
+## 9. Pruebas realizadas
+
+La aplicación se ha probado en un emulador Android y en un navegador web. Las pruebas funcionales indicadas se han realizado satisfactoriamente y se han demostrado en vídeo.
+
+| Prueba | Resultado |
+|---|---|
+| Inicio de la aplicación | Correcto |
+| Carga de imagen del splash | Correcto |
+| Onboarding y opción para saltarlo | Correcto |
+| Registro e inicio de sesión | Correcto |
+| Gestión de errores de autenticación | Correcto |
+| Cierre de sesión | Correcto |
+| Navegación entre pantallas | Correcto |
+| Lectura y escritura en Firestore | Correcto |
+| Guardado de perfiles en Firebase | Correcto |
+| Envío y almacenamiento de mensajes | Correcto |
+| Estados de carga, vacío y error | Correcto |
+| Ejecución en emulador Android | Correcto |
+| Ejecución en navegador web | Correcto |
+
+La tabla se complementa con la memoria de pruebas y las capturas que se entregan en el PDF de la Fase 1.
 
 ## 10. Control de versiones
 
-El proyecto utiliza Git para registrar los cambios durante el desarrollo.
+El proyecto se encuentra alojado en GitHub:
 
-Consultar el historial:
+[https://github.com/pabloacebron10-droid/dam_proyect](https://github.com/pabloacebron10-droid/dam_proyect)
 
-```bash
-git log --oneline
-```
+El historial cuenta con al menos 15 commits con mensajes descriptivos, que permiten identificar los cambios realizados durante el desarrollo.
 
-La entrega de esta fase requiere un mínimo de 15 commits con mensajes descriptivos que permitan identificar los cambios realizados durante el proceso.
-
-El repositorio debe incluir al profesor como colaborador invitado, según las instrucciones de la actividad.
+El profesor está invitado al repositorio para poder revisar el código y su evolución.
 
 ## 11. Uso de inteligencia artificial
 
-El uso de herramientas de inteligencia artificial se documentará en `IA.md`, indicando qué herramientas se han utilizado, para qué tareas y qué cambios se han revisado o probado.
+El uso de asistentes de inteligencia artificial debe documentarse en el archivo `IA.md`, indicando las tareas en las que se han utilizado, las sugerencias aprovechadas y las modificaciones realizadas por el alumno.
 
-La persona que entrega el proyecto debe poder explicar el código y las decisiones de implementación.
 
-## 12. Estado de la fase
+## 12. Autoría
 
-Este README describe el procedimiento de instalación, ejecución y validación. Los apartados de Firebase, navegación, persistencia y pruebas deben actualizarse para reflejar el estado real del proyecto.
+**Autor:** Pablo Acebron.
 
-La entrega de la fase incluye el repositorio, la documentación, las evidencias de ejecución y un PDF corto con capturas y una tabla de pruebas.
+Este proyecto constituye la base de la aplicación que se ampliará en las siguientes fases del proyecto de DAM, incorporando nuevas funcionalidades sobre la estructura actual.
