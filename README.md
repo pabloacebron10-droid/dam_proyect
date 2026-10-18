@@ -251,12 +251,8 @@ El historial cuenta con al menos 15 commits con mensajes descriptivos, que permi
 
 El profesor está invitado al repositorio para poder revisar el código y su evolución.
 
-## 11. Uso de inteligencia artificial
 
-El uso de asistentes de inteligencia artificial debe documentarse en el archivo `IA.md`, indicando las tareas en las que se han utilizado, las sugerencias aprovechadas y las modificaciones realizadas por el alumno.
-
-
-## 12. Autoría
+## 11. Autoría
 
 **Autor:** Pablo Acebron.
 
