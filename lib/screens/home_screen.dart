@@ -5,10 +5,18 @@ import 'package:dam_proyect/models/mensaje.dart';
 import 'package:dam_proyect/models/perfil.dart';
 import 'package:dam_proyect/services/auth_service.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
-import 'package:dam_proyect/screens/chat_screen.dart';
 import 'package:dam_proyect/screens/profile_screen.dart';
 import 'package:dam_proyect/screens/map_explore_screen.dart';
+import 'package:dam_proyect/screens/grid_explore_screen.dart';
 
+/// Pantalla principal de la aplicación (`HomeScreen`).
+///
+/// Contiene una barra de navegación inferior (`NavigationBar`) con tres secciones:
+/// 1. **Social**: Chats de mensajería, lista de contactos y vista de perfil.
+/// 2. **Explorar**: Mapa interactivo OpenStreetMap con geolocalización y búsqueda.
+/// 3. **Destinos Grid**: Vista en cuadrícula (`GridView`) de destinos recomendados.
+///
+/// Cada sección implementa gestión completa de estados de pantalla (Carga, Éxito, Vacío y Error con reintento).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _mainNavIndex = 0; // 0: Social, 1: Explorar / Mapa
+  int _mainNavIndex = 0; // 0: Social, 1: Explorar / Mapa, 2: Cuadrícula Grid
   int _socialTabIndex = 0; // 0: Chats, 1: Contactos, 2: Perfil
 
   final AuthService _authService = AuthService();
@@ -30,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Mensaje> _allUserMessages = [];
   List<Perfil> _allContacts = [];
   bool _isLoadingData = true;
+  String? _socialErrorMessage;
 
   @override
   void initState() {
@@ -37,7 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
   }
 
-  Future<void> _loadInitialData() async {
+  /// Carga inicial de perfiles de Firestore e inicia escucha de mensajería en tiempo real.
+  Future<void> _loadInitialData({bool forceError = false}) async {
     final user = _authService.getCurrentUser();
     if (user == null) {
       if (mounted) {
@@ -48,7 +58,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    setState(() {
+      _isLoadingData = true;
+      _socialErrorMessage = null;
+    });
+
     try {
+      if (forceError) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        throw Exception('Error al conectar con Cloud Firestore. Comprueba tu conexión a internet.');
+      }
+
       final profiles = await _firestoreService.getAllProfiles();
       if (!mounted) return;
 
@@ -63,6 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _startListeningMessages(user.uid);
     } catch (e) {
       debugPrint('Error cargando perfiles iniciales: $e');
+      if (mounted) {
+        setState(() {
+          _socialErrorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -72,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Inicia las suscripciones a los mensajes recibidos y enviados en Firestore.
   void _startListeningMessages(String currentUserId) {
     List<Mensaje> received = [];
     List<Mensaje> sent = [];
@@ -97,21 +123,40 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    _receivedSub = _firestoreService.getReceivedMessages(currentUserId).listen((list) {
-      received = list;
-      updateMessages();
-    });
+    _receivedSub = _firestoreService.getReceivedMessages(currentUserId).listen(
+      (list) {
+        received = list;
+        updateMessages();
+      },
+      onError: (e) {
+        if (mounted) {
+          setState(() {
+            _socialErrorMessage = 'Error en el canal de mensajes recibidos: $e';
+          });
+        }
+      },
+    );
 
-    _sentSub = _firestoreService.getSentMessages(currentUserId).listen((list) {
-      sent = list;
-      updateMessages();
-    });
+    _sentSub = _firestoreService.getSentMessages(currentUserId).listen(
+      (list) {
+        sent = list;
+        updateMessages();
+      },
+      onError: (e) {
+        if (mounted) {
+          setState(() {
+            _socialErrorMessage = 'Error en el canal de mensajes enviados: $e';
+          });
+        }
+      },
+    );
   }
 
   Future<void> _checkAndFetchMissingProfiles(
       String currentUserId, List<Mensaje> messages) async {
     for (final m in messages) {
-      final otherId = (m.remitenteId == currentUserId) ? m.destinatarioId : m.remitenteId;
+      final otherId =
+          (m.remitenteId == currentUserId) ? m.destinatarioId : m.remitenteId;
       if (!_profilesCache.containsKey(otherId)) {
         try {
           final profile = await _firestoreService.getProfileByUid(otherId);
@@ -182,15 +227,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _socialTabIndex == 1
                       ? 'Contactos'
                       : 'Mi Perfil')
-              : 'Explorar & IA',
+              : _mainNavIndex == 1
+                  ? 'Explorar & IA'
+                  : 'Destinos en Cuadrícula',
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
         ),
         actions: [
+          if (_mainNavIndex == 0)
+            IconButton(
+              tooltip: 'Simular error en pantalla',
+              icon: const Icon(Icons.bug_report_outlined, color: Colors.orange),
+              onPressed: () => _loadInitialData(forceError: true),
+            ),
           IconButton(
+            tooltip: 'Cerrar sesión',
             onPressed: () async {
               await _authService.logout();
               if (context.mounted) {
@@ -205,7 +259,11 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _mainNavIndex == 0 ? _buildSocialBody() : const MapExploreScreen(),
+      body: _mainNavIndex == 0
+          ? _buildSocialBody()
+          : _mainNavIndex == 1
+              ? const MapExploreScreen()
+              : const GridExploreScreen(),
       floatingActionButton: (_mainNavIndex == 0 && _socialTabIndex == 0)
           ? FloatingActionButton(
               onPressed: () {
@@ -234,12 +292,78 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedIcon: Icon(Icons.map_rounded),
             label: 'Explorar',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.grid_view_outlined),
+            selectedIcon: Icon(Icons.grid_view_rounded),
+            label: 'Destinos Grid',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSocialBody() {
+    // Si hay un mensaje de error explícito en pantalla:
+    if (_socialErrorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cloud_off_rounded,
+                  size: 60,
+                  color: Colors.red.shade600,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Error al cargar la sección Social',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _socialErrorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _loadInitialData(forceError: false),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text(
+                  'Reintentar',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         Container(

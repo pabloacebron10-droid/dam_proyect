@@ -5,6 +5,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:dam_proyect/models/trip_preferences.dart';
 
+/// Pantalla de Exploración en Mapa (OpenStreetMap) - Sección 2 de la Barra Inferior.
+///
+/// Permite al usuario buscar ciudades, posicionarse interactivamente en el mapa,
+/// ajustar el radio de acción en kilómetros y la duración del viaje en días,
+/// así como gestionar posibles errores de conectividad en búsquedas con botón de reintento.
 class MapExploreScreen extends StatefulWidget {
   const MapExploreScreen({super.key});
 
@@ -22,18 +27,21 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
   int _tripDays = 3;
 
   bool _isSearching = false;
+  String? _searchErrorMessage;
   List<dynamic> _searchResults = [];
 
   Future<void> _searchCity(String query) async {
     if (query.trim().length < 2) {
       setState(() {
         _searchResults = [];
+        _searchErrorMessage = null;
       });
       return;
     }
 
     setState(() {
       _isSearching = true;
+      _searchErrorMessage = null;
     });
 
     try {
@@ -44,18 +52,28 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
       final response = await http.get(
         url,
         headers: {'User-Agent': 'dam_proyect_flutter_app'},
-      );
+      ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as List<dynamic>;
         if (mounted) {
           setState(() {
             _searchResults = data;
+            if (data.isEmpty) {
+              _searchErrorMessage = 'No se encontraron resultados para "$query".';
+            }
           });
         }
+      } else {
+        throw Exception('Servidor OpenStreetMap no disponible (Código ${response.statusCode})');
       }
     } catch (e) {
       debugPrint('Error en la búsqueda de ciudad: $e');
+      if (mounted) {
+        setState(() {
+          _searchErrorMessage = 'Error de red al buscar ubicación. Revisa tu conexión.';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -76,6 +94,7 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
       _selectedLocation = newLocation;
       _selectedCity = displayName.split(',').take(2).join(', ');
       _searchResults = [];
+      _searchErrorMessage = null;
       _searchController.text = _selectedCity;
     });
 
@@ -131,6 +150,7 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
                                 _searchController.clear();
                                 setState(() {
                                   _searchResults = [];
+                                  _searchErrorMessage = null;
                                 });
                               },
                             )
@@ -152,6 +172,37 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
                     const Padding(
                       padding: EdgeInsets.all(8.0),
                       child: LinearProgressIndicator(color: Colors.deepPurple),
+                    ),
+
+                  // ESTADO DE ERROR / MENSAJE EN PANTALLA SI FALLA LA BÚSQUEDA DEL MAPA
+                  if (_searchErrorMessage != null)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _searchErrorMessage!,
+                              style: TextStyle(
+                                color: Colors.red.shade900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _searchCity(_searchController.text),
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
                     ),
 
                   if (_searchResults.isNotEmpty)
