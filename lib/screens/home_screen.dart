@@ -430,13 +430,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           onTap: () {
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(
-                  contacto: contactProfile,
-                ),
-              ),
+              '/chat',
+              arguments: contactProfile,
             );
           },
         );
@@ -480,24 +477,18 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.chat_bubble_outline_rounded,
                 color: Colors.deepPurple),
             onPressed: () {
-              Navigator.push(
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => ChatScreen(
-                    contacto: contact,
-                  ),
-                ),
+                '/chat',
+                arguments: contact,
               );
             },
           ),
           onTap: () {
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(
-                  contacto: contact,
-                ),
-              ),
+              '/chat',
+              arguments: contact,
             );
           },
         );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:dam_proyect/screens/trip_wizard_screen.dart';
+import 'package:dam_proyect/models/trip_preferences.dart';
 
 class MapExploreScreen extends StatefulWidget {
   const MapExploreScreen({super.key});
@@ -362,15 +362,14 @@ class _MapExploreScreenState extends State<MapExploreScreen> {
                     height: 50,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushNamed(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => TripWizardScreen(
-                              city: _selectedCity,
-                              location: _selectedLocation,
-                              radiusKm: _actionRadiusKm,
-                              tripDays: _tripDays,
-                            ),
+                          '/trip_wizard',
+                          arguments: TripWizardArgs(
+                            city: _selectedCity,
+                            location: _selectedLocation,
+                            radiusKm: _actionRadiusKm,
+                            tripDays: _tripDays,
                           ),
                         );
                       },

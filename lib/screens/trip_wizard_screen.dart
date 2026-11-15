@@ -44,13 +44,10 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.push(
+      Navigator.pushNamed(
         context,
-        MaterialPageRoute(
-          builder: (context) => TripDetailScreen(
-            preferences: _preferences,
-          ),
-        ),
+        '/trip_detail',
+        arguments: _preferences,
       );
     }
   }
