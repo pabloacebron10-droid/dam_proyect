@@ -24,28 +24,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'TU_API_KEY_WEB',
-    appId: '1:123456789000:web:abcdef0123456789',
-    messagingSenderId: '123456789000',
-    projectId: 'tu-proyecto-firebase-id',
-    authDomain: 'tu-proyecto-firebase-id.firebaseapp.com',
-    storageBucket: 'tu-proyecto-firebase-id.firebasestorage.app',
+    apiKey: 'DEMO_EMULATOR_API_KEY_WEB',
+    appId: '1:942238332444:web:6b2bafc58e333a04d691d9',
+    messagingSenderId: '942238332444',
+    projectId: 'proyectodam-56a61',
+    authDomain: 'proyectodam-56a61.firebaseapp.com',
+    storageBucket: 'proyectodam-56a61.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'TU_API_KEY_ANDROID',
-    appId: '1:123456789000:android:abcdef0123456789',
-    messagingSenderId: '123456789000',
-    projectId: 'tu-proyecto-firebase-id',
-    storageBucket: 'tu-proyecto-firebase-id.firebasestorage.app',
+    apiKey: 'DEMO_EMULATOR_API_KEY_ANDROID',
+    appId: '1:942238332444:android:a6bf2ffb65bb8ee3d691d9',
+    messagingSenderId: '942238332444',
+    projectId: 'proyectodam-56a61',
+    storageBucket: 'proyectodam-56a61.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'TU_API_KEY_IOS',
-    appId: '1:123456789000:ios:abcdef0123456789',
-    messagingSenderId: '123456789000',
-    projectId: 'tu-proyecto-firebase-id',
-    storageBucket: 'tu-proyecto-firebase-id.firebasestorage.app',
+    apiKey: 'DEMO_EMULATOR_API_KEY_IOS',
+    appId: '1:942238332444:ios:2b87472f05daee77d691d9',
+    messagingSenderId: '942238332444',
+    projectId: 'proyectodam-56a61',
+    storageBucket: 'proyectodam-56a61.firebasestorage.app',
     iosBundleId: 'com.example.damProyect',
   );
 }

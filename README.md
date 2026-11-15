@@ -163,15 +163,27 @@ Siendo rigurosos desde el punto de vista de sistemas (`0490 PSP`): calcular 20 f
 
 ## 8. Bloque 7: Ejecución con Emuladores (`--dart-define`) y Datos Exportados
 
+### Paso 0: Preparar los ficheros de configuración tras clonar el repositorio (`fase-1b`)
+Como `lib/firebase_options.dart` y `android/app/google-services.json` están excluidos en `.gitignore` para no subir claves reales a GitHub, al clonar el repositorio copia las plantillas incluidas (que apuntan a `proyectodam-56a61` sin claves reales y funcionan directamente contra los emuladores locales):
+```bash
+# En Windows (PowerShell):
+Copy-Item lib/firebase_options.dart.example lib/firebase_options.dart
+Copy-Item android/app/google-services.json.example android/app/google-services.json
+
+# En Linux / macOS / Git Bash:
+cp lib/firebase_options.dart.example lib/firebase_options.dart
+cp android/app/google-services.json.example android/app/google-services.json
+```
+
 ### Datos de Prueba Exportados en el Repositorio (`./firebase_emulator_data`)
 El repositorio incluye la carpeta [firebase_emulator_data](file:///c:/Proyectos%20Flutter/dam_proyect/firebase_emulator_data) con los datos de prueba exportados de **Auth** (usuarios `alumno@dam.es` / `123456` y `compañero@dam.es` / `123456`) y **Firestore** (perfiles con `GeoPoint`, `Timestamp` y miniatura Base64, mensajes y los **20 destinos**).
 
-### Arrancar los Emuladores Importando los Datos con UN SOLO COMANDO
+### Paso 1: Arrancar los Emuladores Importando los Datos con UN SOLO COMANDO
 ```bash
 firebase emulators:start --import=./firebase_emulator_data --export-on-exit=./firebase_emulator_data
 ```
 
-### Arrancar la Aplicación Conectada a los Emuladores (`--dart-define`)
+### Paso 2: Arrancar la Aplicación Conectada a los Emuladores (`--dart-define`)
 La conexión a los emuladores se activa exclusivamente mediante bandera de compilación (`bool.fromEnvironment('USE_EMULATOR')` en [lib/main.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/main.dart)), nunca con un booleano escrito a mano:
 ```bash
 # En navegador Chrome contra emuladores locales:

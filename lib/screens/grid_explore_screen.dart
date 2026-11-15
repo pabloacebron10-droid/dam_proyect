@@ -356,6 +356,86 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                if (!isMine) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 18,
+                          color: Colors.orange.shade900,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Documento ajeno: la interfaz oculta Editar/Borrar y firestore.rules bloquea cualquier escritura.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            foregroundColor: Colors.deepOrange.shade800,
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            try {
+                              await _firestoreService.deleteDestination(item.id);
+                            } catch (e) {
+                              if (!mounted) return;
+                              showDialog<void>(
+                                context: context,
+                                builder: (errCtx) => AlertDialog(
+                                  title: const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.gpp_bad_outlined,
+                                        color: Colors.red,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Bloqueado por firestore.rules',
+                                          style: TextStyle(fontSize: 17),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  content: Text(
+                                    'Cloud Firestore ha rechazado la operación sobre el documento ajeno "${item.titulo}":\n\n$e',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(errCtx),
+                                      child: const Text('Entendido'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text(
+                            'Probar regla',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(
                   children: [
                     if (isMine) ...[
@@ -705,6 +785,7 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                                 descripcion: descCtrl.text.trim(),
                                 rating: double.parse(rating.toStringAsFixed(2)),
                                 imagenUrl: customImageUrl,
+                                coordenadas: currentGeoPoint,
                               );
                               if (_queryMode ==
                                   FirestoreQueryMode.compoundWhere) {

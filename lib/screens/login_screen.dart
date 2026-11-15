@@ -214,10 +214,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     try {
-                      await _authService.login(
+                      final cred = await _authService.login(
                         _emailController.text.trim(),
                         _passwordController.text,
                       );
+
+                      if (cred.user != null) {
+                        await _firestoreService.syncGoogleUserProfile(
+                          uId: cred.user!.uid,
+                          email: cred.user!.email ??
+                              _emailController.text.trim(),
+                          displayName: cred.user!.displayName,
+                          photoUrl: cred.user!.photoURL,
+                        );
+                      }
 
                       if (!context.mounted) return;
 
