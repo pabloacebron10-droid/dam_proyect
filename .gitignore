@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Firebase configuration files (contienen claves de API y credenciales de proyecto; no deben subirse al repositorio)
+android/app/google-services.json
+lib/firebase_options.dart
+ios/Runner/GoogleService-Info.plist
+
