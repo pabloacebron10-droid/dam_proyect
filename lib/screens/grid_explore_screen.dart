@@ -58,11 +58,14 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
   FirestoreQueryMode _queryMode = FirestoreQueryMode.compoundWhere;
   String _selectedCategory = 'España';
   double _minRating = 4.8;
+  int _topLimit = 5;
   int _dateRangeDays = 20;
+  DateTimeRange? _customDateRange;
 
   List<Destino> _destinos = [];
   DocumentSnapshot<Destino>? _lastPageDoc;
   bool _hasMorePages = false;
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -103,17 +106,30 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
           break;
 
         case FirestoreQueryMode.orderByLimit:
-          results =
-              await _firestoreService.queryTopRatedDestinations(limit: 5);
+          results = await _firestoreService.queryTopRatedDestinations(
+            limit: _topLimit,
+          );
           _hasMorePages = false;
           break;
 
         case FirestoreQueryMode.dateRange:
           final now = DateTime.now();
-          final start = now.subtract(Duration(days: _dateRangeDays));
+          final DateTime start = _customDateRange != null
+              ? _customDateRange!.start
+              : now.subtract(Duration(days: _dateRangeDays));
+          final DateTime end = _customDateRange != null
+              ? DateTime(
+                  _customDateRange!.end.year,
+                  _customDateRange!.end.month,
+                  _customDateRange!.end.day,
+                  23,
+                  59,
+                  59,
+                )
+              : now.add(const Duration(hours: 1));
           results = await _firestoreService.queryDestinationsByDateRange(
             start,
-            now.add(const Duration(hours: 1)),
+            end,
           );
           _hasMorePages = false;
           break;
@@ -127,6 +143,7 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
           results = pageResult.items;
           _lastPageDoc = pageResult.lastDocument;
           _hasMorePages = pageResult.hasMore;
+          _currentPage = 1;
           break;
       }
 
@@ -142,6 +159,30 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// Abre un selector de rango de fechas en calendario para la Consulta 3 (`Timestamp`).
+  Future<void> _pickCustomDateRange() async {
+    final now = DateTime.now();
+    final initialRange = _customDateRange ??
+        DateTimeRange(
+          start: now.subtract(Duration(days: _dateRangeDays)),
+          end: now,
+        );
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now.add(const Duration(days: 1)),
+      initialDateRange: initialRange,
+      helpText: 'Selecciona el rango de fechas de publicación',
+      saveText: 'Aplicar filtro',
+    );
+    if (picked != null) {
+      setState(() {
+        _customDateRange = picked;
+      });
+      await _executeActiveQuery();
     }
   }
 
@@ -164,6 +205,7 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
         _destinos.addAll(pageResult.items);
         _lastPageDoc = pageResult.lastDocument;
         _hasMorePages = pageResult.hasMore;
+        _currentPage += 1;
         _isLoadingMorePage = false;
       });
     } catch (e) {
@@ -664,6 +706,13 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                                 rating: double.parse(rating.toStringAsFixed(2)),
                                 imagenUrl: customImageUrl,
                               );
+                              if (_queryMode ==
+                                  FirestoreQueryMode.compoundWhere) {
+                                _selectedCategory = categoria;
+                                if (rating < _minRating) {
+                                  _minRating = 4.0;
+                                }
+                              }
                               if (mounted) {
                                 ScaffoldMessenger.of(this.context).showSnackBar(
                                   const SnackBar(
@@ -689,6 +738,13 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                                 creadorId: user?.uid ?? 'demo_user_1',
                               );
                               await _firestoreService.createDestination(nuevo);
+                              if (_queryMode ==
+                                  FirestoreQueryMode.compoundWhere) {
+                                _selectedCategory = categoria;
+                                if (rating < _minRating) {
+                                  _minRating = 4.0;
+                                }
+                              }
                               if (mounted) {
                                 ScaffoldMessenger.of(this.context).showSnackBar(
                                   const SnackBar(
@@ -801,7 +857,7 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
       ),
       body: Column(
         children: [
-          // Selector de las 4 Consultas Avanzadas de Firestore (Bloque 2)
+          // Selector de las 4 Consultas que responden preguntas (Bloque 2 de la rúbrica)
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
@@ -811,14 +867,14 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                 Row(
                   children: [
                     const Icon(
-                      Icons.storage_rounded,
+                      Icons.help_outline_rounded,
                       size: 18,
                       color: Colors.deepPurple,
                     ),
                     const SizedBox(width: 6),
                     const Expanded(
                       child: Text(
-                        'Consultas Firestore (20+ docs):',
+                        '¿Qué destinos buscas hoy? (4 Consultas Firestore):',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -842,27 +898,29 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                     children: [
                       _buildQueryChip(
                         FirestoreQueryMode.compoundWhere,
-                        '1. where (2 cond)',
+                        '1. Destacados por región',
                         Icons.filter_alt_outlined,
                       ),
                       _buildQueryChip(
                         FirestoreQueryMode.orderByLimit,
-                        '2. orderBy + limit(5)',
-                        Icons.leaderboard_outlined,
+                        '2. Top Mejor Valorados',
+                        Icons.emoji_events_outlined,
                       ),
                       _buildQueryChip(
                         FirestoreQueryMode.dateRange,
-                        '3. Rango Fechas',
+                        '3. Publicados por fecha',
                         Icons.date_range_outlined,
                       ),
                       _buildQueryChip(
                         FirestoreQueryMode.paginated,
-                        '4. Paginación Cursor',
+                        '4. Catálogo A–Z (Paginado)',
                         Icons.auto_stories_outlined,
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 6),
+                _buildQuestionAndQueryBanner(),
                 const SizedBox(height: 6),
                 _buildSubFilterControls(),
               ],
@@ -877,6 +935,79 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
         ],
       ),
     );
+  }
+
+  /// Muestra un recuadro con la pregunta de usuario que responde la consulta actual
+  /// y la sentencia exacta ejecutada contra Cloud Firestore.
+  Widget _buildQuestionAndQueryBanner() {
+    String question;
+    String technicalQuery;
+
+    switch (_queryMode) {
+      case FirestoreQueryMode.compoundWhere:
+        question =
+            'Pregunta 1: ¿Qué destinos de $_selectedCategory tienen una valoración de al menos ${_minRating.toStringAsFixed(1)} ⭐?';
+        technicalQuery =
+            'where("categoria", == "$_selectedCategory") + where("rating", >= ${_minRating.toStringAsFixed(1)}) [Índice compuesto] • ${_destinos.length} resultados';
+        break;
+      case FirestoreQueryMode.orderByLimit:
+        question =
+            'Pregunta 2: ¿Cuáles son los $_topLimit destinos mejor valorados de todo el mundo?';
+        technicalQuery =
+            'orderBy("rating", descending: true).limit($_topLimit) • Top $_topLimit';
+        break;
+      case FirestoreQueryMode.dateRange:
+        final rangeLabel = _customDateRange != null
+            ? 'del ${_formatShortDate(_customDateRange!.start)} al ${_formatShortDate(_customDateRange!.end)}'
+            : 'en los últimos $_dateRangeDays días';
+        question =
+            'Pregunta 3: ¿Qué destinos se han publicado $rangeLabel?';
+        technicalQuery =
+            'where("fechaCreacion", >= inicio) + where("fechaCreacion", <= fin) [Timestamp] • ${_destinos.length} resultados';
+        break;
+      case FirestoreQueryMode.paginated:
+        question =
+            'Pregunta 4: ¿Cómo recorrer el catálogo alfabético completo por bloques sin cargarlo todo de golpe?';
+        technicalQuery =
+            'orderBy("titulo").limit(6).startAfterDocument(cursor) • Página $_currentPage (${_destinos.length} cargados)';
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.shade50.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.deepPurple.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.deepPurple.shade900,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            technicalQuery,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontFamily: 'monospace',
+              color: Colors.deepPurple.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatShortDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, "0")}/${date.month.toString().padLeft(2, "0")}/${date.year}';
   }
 
   Widget _buildQueryChip(
@@ -921,10 +1052,15 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
+              const Text(
+                'Región:',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 6),
               ...['España', 'Europa', 'Asia', 'América'].map((cat) {
                 final selected = _selectedCategory == cat;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.only(right: 5),
                   child: FilterChip(
                     visualDensity: VisualDensity.compact,
                     label: Text(cat, style: const TextStyle(fontSize: 11)),
@@ -936,65 +1072,148 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                   ),
                 );
               }),
-              ActionChip(
-                visualDensity: VisualDensity.compact,
-                label: Text(
-                  'Rating >= ${_minRating.toStringAsFixed(1)}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _minRating = _minRating >= 4.85 ? 4.7 : 4.85;
-                  });
-                  _executeActiveQuery();
-                },
+              const SizedBox(width: 6),
+              const Text(
+                'Nota mín.:',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
               ),
+              const SizedBox(width: 4),
+              ...[4.7, 4.8, 4.9].map((ratingOpt) {
+                final selected = (_minRating - ratingOpt).abs() < 0.02;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 5),
+                  child: ChoiceChip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      '≥ ${ratingOpt.toStringAsFixed(1)}★',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: selected,
+                    onSelected: (_) {
+                      setState(() => _minRating = ratingOpt);
+                      _executeActiveQuery();
+                    },
+                  ),
+                );
+              }),
             ],
           ),
         );
 
       case FirestoreQueryMode.orderByLimit:
-        return const Text(
-          'Consulta activa: .orderBy("rating", descending: true).limit(5)',
-          style: TextStyle(fontSize: 11, color: Colors.deepPurple),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              const Text(
+                'Tamaño del ranking (limit):',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 8),
+              ...[3, 5, 10].map((lim) {
+                final selected = _topLimit == lim;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      'Top $lim mejores',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: selected,
+                    onSelected: (_) {
+                      setState(() => _topLimit = lim);
+                      _executeActiveQuery();
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
         );
 
       case FirestoreQueryMode.dateRange:
-        return Row(
-          children: [
-            const Text(
-              'Rango Timestamp:',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(width: 8),
-            ...[10, 20, 60].map((days) {
-              final selected = _dateRangeDays == days;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  visualDensity: VisualDensity.compact,
-                  label: Text(
-                    'Últimos $days días',
-                    style: const TextStyle(fontSize: 11),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              ...[7, 20, 60].map((days) {
+                final selected =
+                    _customDateRange == null && _dateRangeDays == days;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      'Últimos $days días',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: selected,
+                    onSelected: (_) {
+                      setState(() {
+                        _customDateRange = null;
+                        _dateRangeDays = days;
+                      });
+                      _executeActiveQuery();
+                    },
                   ),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() => _dateRangeDays = days);
-                    _executeActiveQuery();
-                  },
+                );
+              }),
+              ActionChip(
+                visualDensity: VisualDensity.compact,
+                avatar: const Icon(
+                  Icons.calendar_month_outlined,
+                  size: 15,
+                  color: Colors.deepPurple,
                 ),
-              );
-            }),
-          ],
+                backgroundColor: _customDateRange != null
+                    ? Colors.deepPurple.shade100
+                    : null,
+                label: Text(
+                  _customDateRange != null
+                      ? '${_formatShortDate(_customDateRange!.start)} - ${_formatShortDate(_customDateRange!.end)}'
+                      : 'Elegir fechas...',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: _customDateRange != null
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                onPressed: _pickCustomDateRange,
+              ),
+            ],
+          ),
         );
 
       case FirestoreQueryMode.paginated:
-        return Text(
-          'Mostrando ${_destinos.length} docs (.orderBy("titulo").limit(6) + startAfterDocument)',
-          style: const TextStyle(fontSize: 11, color: Colors.deepPurple),
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Orden A–Z • Página $_currentPage • ${_destinos.length} destinos cargados en memoria',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ),
+            if (_currentPage > 1)
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onPressed: () => _executeActiveQuery(),
+                icon: const Icon(Icons.restart_alt, size: 15),
+                label: const Text(
+                  'Volver a pág. 1',
+                  style: TextStyle(fontSize: 11),
+                ),
+              ),
+          ],
         );
     }
   }
@@ -1069,11 +1288,31 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
     }
 
     if (_destinos.isEmpty) {
-      return const Center(
-        child: Text(
-          'No se encontraron destinos para los criterios de esta consulta.',
-          style: TextStyle(fontSize: 15, color: Colors.grey),
-          textAlign: TextAlign.center,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off_rounded,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Ningún destino cumple las condiciones de esta pregunta.',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Prueba a cambiar la región, bajar la valoración mínima o ampliar el rango de fechas.',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1082,10 +1321,10 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
       children: [
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 84),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.70,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
             ),
@@ -1121,18 +1360,29 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.65),
+                                  color: Colors.black.withValues(alpha: 0.68),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    if (_queryMode ==
+                                        FirestoreQueryMode.orderByLimit) ...[
+                                      Text(
+                                        '#${index + 1} ',
+                                        style: const TextStyle(
+                                          color: Colors.amberAccent,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
                                     const Icon(
                                       Icons.star,
                                       color: Colors.amber,
                                       size: 14,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 3),
                                     Text(
                                       '${item.rating}',
                                       style: const TextStyle(
@@ -1190,14 +1440,14 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               item.titulo,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
@@ -1208,7 +1458,7 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                               children: [
                                 Icon(
                                   Icons.location_on_outlined,
-                                  size: 13,
+                                  size: 12,
                                   color: Colors.grey.shade600,
                                 ),
                                 const SizedBox(width: 2),
@@ -1216,13 +1466,52 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
                                   child: Text(
                                     '${item.pais} • ${item.categoria}',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11.5,
                                       color: Colors.grey.shade600,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 11,
+                                  color: _queryMode ==
+                                          FirestoreQueryMode.dateRange
+                                      ? Colors.deepPurple
+                                      : Colors.grey.shade500,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    _formatShortDate(item.fechaCreacion),
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: _queryMode ==
+                                              FirestoreQueryMode.dateRange
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: _queryMode ==
+                                              FirestoreQueryMode.dateRange
+                                          ? Colors.deepPurple
+                                          : Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                                if (canModify)
+                                  Text(
+                                    'Mío',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.deepPurple.shade700,
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
@@ -1236,27 +1525,54 @@ class _GridExploreScreenState extends State<GridExploreScreen> {
           ),
         ),
 
-        // Botón de paginación con cursor startAfterDocument (Consulta 4)
-        if (_queryMode == FirestoreQueryMode.paginated && _hasMorePages)
+        // Barra inferior de paginación con cursor startAfterDocument (Consulta 4)
+        if (_queryMode == FirestoreQueryMode.paginated)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-            color: Colors.white,
-            child: OutlinedButton.icon(
-              onPressed: _isLoadingMorePage ? null : _loadNextPage,
-              icon: _isLoadingMorePage
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.read_more),
-              label: Text(
-                _isLoadingMorePage
-                    ? 'Cargando página siguiente...'
-                    : 'Cargar siguiente página (startAfterDocument)',
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 8, 170, 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 6,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
+            child: _hasMorePages
+                ? ElevatedButton.icon(
+                    onPressed: _isLoadingMorePage ? null : _loadNextPage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple.shade50,
+                      foregroundColor: Colors.deepPurple.shade900,
+                      elevation: 0,
+                    ),
+                    icon: _isLoadingMorePage
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.read_more, size: 18),
+                    label: Text(
+                      _isLoadingMorePage
+                          ? 'Cargando...'
+                          : 'Cargar 6 más (Pág. ${_currentPage + 1})',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () => _executeActiveQuery(),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text(
+                      'Catálogo completo • Volver a pág. 1',
+                      style: TextStyle(fontSize: 11.5),
+                    ),
+                  ),
           ),
       ],
     );
