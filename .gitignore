@@ -51,4 +51,7 @@ app.*.map.json
 android/app/google-services.json
 lib/firebase_options.dart
 ios/Runner/GoogleService-Info.plist
+.firebase/
+/android/build/
+AUDITORIA_PROYECTO_FASE1B.md
 

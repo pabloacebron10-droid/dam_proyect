@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
 import 'package:dam_proyect/models/perfil.dart';
@@ -14,15 +17,40 @@ import 'package:dam_proyect/screens/splash_screen.dart';
 import 'package:dam_proyect/screens/trip_detail_screen.dart';
 import 'package:dam_proyect/screens/trip_wizard_screen.dart';
 
+/// Bandera de compilación para conectar la app a Firebase Emulator Suite:
+/// `flutter run --dart-define=USE_EMULATOR=true`
+const bool useEmulator = bool.fromEnvironment(
+  'USE_EMULATOR',
+  defaultValue: false,
+);
+
 /// Punto de entrada principal de la aplicación Flutter.
 ///
 /// Inicializa las vinculaciones de widgets de Flutter y Firebase Core con la
-/// configuración de la plataforma actual, e inicia el widget raíz `MyApp`.
+/// configuración de la plataforma actual. Si se activa `USE_EMULATOR=true` por
+/// `--dart-define`, redirige Auth y Firestore a los emuladores locales.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  if (useEmulator) {
+    final String emulatorHost =
+        (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+            ? '10.0.2.2'
+            : 'localhost';
+    try {
+      await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
+      FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080);
+      debugPrint(
+        'Firebase Emulator Suite activo en $emulatorHost (Auth: 9099, Firestore: 8080)',
+      );
+    } catch (e) {
+      debugPrint('Aviso al configurar emuladores de Firebase: $e');
+    }
+  }
+
   runApp(const MyApp());
 }
 
