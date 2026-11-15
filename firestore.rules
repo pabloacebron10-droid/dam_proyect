@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Función auxiliar: verifica si el usuario ha iniciado sesión
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Función auxiliar: verifica si el usuario es propietario del recurso
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Colección de perfiles de usuario
+    match /profiles/{userId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isOwner(userId);
+    }
+
+    // Colección de mensajes de chat
+    match /messages/{messageId} {
+      allow read: if isSignedIn() && (
+        resource.data.remitenteId == request.auth.uid ||
+        resource.data.destinatarioId == request.auth.uid
+      );
+      allow create: if isSignedIn() && request.resource.data.remitenteId == request.auth.uid;
+      // El remitente puede editar su mensaje; el destinatario solo puede marcarlo como leído
+      allow update: if isSignedIn() && (
+        resource.data.remitenteId == request.auth.uid ||
+        (resource.data.destinatarioId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leido']))
+      );
+      // Solo el remitente puede eliminar sus propios mensajes (lo ajeno no se puede tocar)
+      allow delete: if isSignedIn() && resource.data.remitenteId == request.auth.uid;
+    }
+
+    // Colección de destinos (20+ documentos con GeoPoint, Timestamp y miniatura Base64)
+    match /destinations/{destinationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      // Estricto: solo el autor del documento puede modificarlo o borrarlo (lo ajeno no se puede tocar)
+      allow update, delete: if isSignedIn() && resource.data.creadorId == request.auth.uid;
+    }
+  }
+}

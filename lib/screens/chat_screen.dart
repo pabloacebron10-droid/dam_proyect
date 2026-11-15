@@ -11,9 +11,8 @@ import 'package:dam_proyect/services/firestore_service.dart';
 /// **Por qué:** Recibe el parámetro `contacto` (`Perfil`) vía rutas con nombre (`arguments`).
 /// Mantiene dos suscripciones en tiempo real (`StreamSubscription`) para mensajes enviados y recibidos,
 /// combinándolos y ordenándolos cronológicamente.
-///
-/// **Cancelación en `dispose()`:** Cancela de forma explícita las suscripciones para evitar fugas de memoria
-/// o escuchas fantasma cuando el usuario abandona la pantalla.
+/// Permite además **editar (`update`) y eliminar (`delete`) mensajes propios** con cuadro de diálogo
+/// de confirmación previo (Bloque 3 de la rúbrica).
 class ChatScreen extends StatefulWidget {
   final Perfil contacto;
 
@@ -44,9 +43,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Escucha streams de Firestore para mensajes entrantes y salientes.
-  ///
-  /// Combina los mensajes por su ID único, marca como leídos aquellos recibidos
-  /// que no lo estuvieran aún, y desplaza la lista automáticamente al fondo.
   void _startListeningMessages() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
@@ -66,7 +62,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final Map<String, Mensaje> uniqueMessages = {};
 
       for (final msg in received) {
-        if (msg.remitenteId == otherUserId && msg.destinatarioId == currentUserId) {
+        if (msg.remitenteId == otherUserId &&
+            msg.destinatarioId == currentUserId) {
           uniqueMessages[msg.id] = msg;
           if (!msg.leido) {
             _firestoreService.markMessageAsRead(msg.id);
@@ -75,7 +72,8 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       for (final msg in sent) {
-        if (msg.remitenteId == currentUserId && msg.destinatarioId == otherUserId) {
+        if (msg.remitenteId == currentUserId &&
+            msg.destinatarioId == otherUserId) {
           uniqueMessages[msg.id] = msg;
         }
       }
@@ -93,7 +91,8 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
 
-    _receivedSub = _firestoreService.getReceivedMessages(currentUserId).listen((list) {
+    _receivedSub =
+        _firestoreService.getReceivedMessages(currentUserId).listen((list) {
       received = list;
       updateCombinedList();
     });
@@ -146,6 +145,140 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// Muestra las opciones de Editar (`update`) o Eliminar (`delete`) para un mensaje propio.
+  Future<void> _showOwnMessageOptions(Mensaje mensaje) async {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined, color: Colors.deepPurple),
+              title: const Text('Editar mensaje (update)'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditMessageDialog(mensaje);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_outline, color: Colors.red.shade700),
+              title: Text(
+                'Eliminar mensaje (delete)',
+                style: TextStyle(color: Colors.red.shade700),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDeleteMessage(mensaje);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditMessageDialog(Mensaje mensaje) async {
+    final editCtrl = TextEditingController(text: mensaje.texto);
+    final String? newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar mensaje'),
+        content: TextField(
+          controller: editCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Nuevo texto del mensaje',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, editCtrl.text.trim()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (newText == null || newText.isEmpty || newText == mensaje.texto) return;
+
+    try {
+      await _firestoreService.updateMessageText(mensaje.id, newText);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mensaje actualizado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al editar el mensaje: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteMessage(Mensaje mensaje) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Eliminar mensaje?'),
+        content: Text(
+          '¿Seguro que deseas borrar el mensaje "${mensaje.texto}" de Cloud Firestore?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _firestoreService.deleteMessage(mensaje.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mensaje eliminado de Firestore'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el mensaje: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -259,54 +392,63 @@ class _ChatScreenState extends State<ChatScreen> {
                               '${mensaje.fecha.hour.toString().padLeft(2, '0')}:${mensaje.fecha.minute.toString().padLeft(2, '0')}';
 
                           return Align(
-                            alignment:
-                                isMe ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.75,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isMe
-                                    ? Colors.deepPurple
-                                    : Colors.white,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(18),
-                                  topRight: const Radius.circular(18),
-                                  bottomLeft: Radius.circular(isMe ? 18 : 4),
-                                  bottomRight: Radius.circular(isMe ? 4 : 18),
+                            alignment: isMe
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: GestureDetector(
+                              onLongPress: isMe
+                                  ? () => _showOwnMessageOptions(mensaje)
+                                  : null,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width * 0.75,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isMe ? Colors.deepPurple : Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(18),
+                                    topRight: const Radius.circular(18),
+                                    bottomLeft: Radius.circular(isMe ? 18 : 4),
+                                    bottomRight: Radius.circular(isMe ? 4 : 18),
                                   ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    mensaje.texto,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: isMe ? Colors.white : Colors.black87,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    horaFormateada,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isMe ? Colors.white70 : Colors.grey,
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      mensaje.texto,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color:
+                                            isMe ? Colors.white : Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      horaFormateada,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color:
+                                            isMe ? Colors.white70 : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
