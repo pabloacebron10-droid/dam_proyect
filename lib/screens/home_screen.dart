@@ -593,9 +593,23 @@ class _HomeScreenState extends State<HomeScreen> {
               fontSize: 16,
             ),
           ),
-          subtitle: Text(
-            contact.email,
-            style: const TextStyle(color: Colors.grey),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                contact.email,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              if (contact.ubicacion != null)
+                Text(
+                  '📍 GeoPoint(${contact.ubicacion!.latitude.toStringAsFixed(3)}, ${contact.ubicacion!.longitude.toStringAsFixed(3)})',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.deepPurple.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
           ),
           trailing: IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded,

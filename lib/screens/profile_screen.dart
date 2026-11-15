@@ -8,6 +8,7 @@ import 'package:dam_proyect/models/perfil.dart';
 import 'package:dam_proyect/services/auth_service.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
 import 'package:dam_proyect/services/image_isolate_service.dart';
+import 'package:dam_proyect/services/location_service.dart';
 
 /// Pantalla de Gestión de Perfil de Usuario (`ProfileScreen`).
 ///
@@ -27,12 +28,14 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
+  final LocationService _locationService = LocationService();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
   bool _isLoadingData = true;
   bool _isSaving = false;
+  bool _isUpdatingGps = false;
 
   // Estado de compresión en Isolate
   bool _isCompressingInIsolate = false;
@@ -234,6 +237,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  /// Lee la posición GPS actual con `geolocator`, la guarda como `GeoPoint` + `Timestamp`
+  /// en el documento de perfil de Firestore y la lee de vuelta tipada (Bloque 5).
+  Future<void> _updateMyGpsInProfile() async {
+    final user = _authService.getCurrentUser();
+    if (user == null) return;
+
+    setState(() {
+      _isUpdatingGps = true;
+    });
+
+    try {
+      final pos = await _locationService.getCurrentRealPosition();
+      final nuevoGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+      await _firestoreService.updateUserLocation(user.uid, nuevoGeoPoint);
+
+      // Leer de vuelta tipada desde Firestore
+      final perfilLeido = await _firestoreService.getProfileByUid(user.uid);
+      if (!mounted) return;
+
+      setState(() {
+        _ultimaUbicacion = perfilLeido?.ubicacion ?? nuevoGeoPoint;
+        _ultimaFechaUbicacion =
+            perfilLeido?.ultimaActualizacionUbicacion ?? DateTime.now();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Posición guardada y leída de Firestore: GeoPoint(${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
+          ),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+    } on LocationFailureException catch (e) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.location_off_outlined, color: Colors.redAccent),
+              SizedBox(width: 8),
+              Expanded(child: Text('Aviso de Localización GPS')),
+            ],
+          ),
+          content: Text(e.message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar posición GPS: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingGps = false;
+        });
+      }
+    }
   }
 
   /// Guarda los cambios introducidos en el perfil en Firebase Storage y Cloud Firestore.
@@ -482,34 +556,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          if (_ultimaUbicacion != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.gps_fixed, color: Colors.blue.shade700, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Último GeoPoint guardado: '
-                      '(${_ultimaUbicacion!.latitude.toStringAsFixed(4)}, '
-                      '${_ultimaUbicacion!.longitude.toStringAsFixed(4)})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue.shade900,
+          const SizedBox(height: 16),
+          // Tarjeta Bloque 5: Dónde estoy (GeoPoint + Timestamp guardados y leídos de Firestore)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.gps_fixed, color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Mi Posición GPS en Firestore (GeoPoint + Timestamp)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade900,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _ultimaUbicacion != null
+                      ? 'GeoPoint: (${_ultimaUbicacion!.latitude.toStringAsFixed(5)}, ${_ultimaUbicacion!.longitude.toStringAsFixed(5)})\n'
+                          'Timestamp: ${_ultimaFechaUbicacion != null ? "${_ultimaFechaUbicacion!.day.toString().padLeft(2, "0")}/${_ultimaFechaUbicacion!.month.toString().padLeft(2, "0")}/${_ultimaFechaUbicacion!.year} ${_ultimaFechaUbicacion!.hour.toString().padLeft(2, "0")}:${_ultimaFechaUbicacion!.minute.toString().padLeft(2, "0")}:${_ultimaFechaUbicacion!.second.toString().padLeft(2, "0")}" : "Recién actualizado"}'
+                      : 'Aún no has guardado tu posición GPS en este perfil.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue.shade900,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _isUpdatingGps ? null : _updateMyGpsInProfile,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue.shade800,
+                    side: BorderSide(color: Colors.blue.shade400),
+                    backgroundColor: Colors.white,
+                  ),
+                  icon: _isUpdatingGps
+                      ? const SizedBox(
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location, size: 17),
+                  label: Text(
+                    _isUpdatingGps
+                        ? 'Leyendo GPS con geolocator...'
+                        : 'Dónde estoy: Leer y guardar mi GPS ahora',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
 
           const SizedBox(height: 28),
 
