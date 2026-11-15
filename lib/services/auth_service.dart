@@ -10,9 +10,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// en español comprensibles para el usuario final.
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: <String>['email', 'profile'],
-  );
+
+  /// Instancia perezosa de `GoogleSignIn` para plataformas nativas (Android/iOS).
+  GoogleSignIn get _googleSignIn => GoogleSignIn(
+        scopes: <String>['email', 'profile'],
+      );
 
   /// Registra una nueva cuenta de usuario con email y contraseña.
   ///

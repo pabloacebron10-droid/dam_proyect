@@ -1,180 +1,205 @@
-# DAM Proyect — Fase 1b: Fotos, Posición, Consultas y Navegación
+# DAM Proyect — Fase 1b: Fotos, Posición, Consultas, Isolates y Navegación
 
-Proyecto de 2.º de **Desarrollo de Aplicaciones Multiplataforma (DAM)**.
+Proyecto intermodular de 2.º de **Desarrollo de Aplicaciones Multiplataforma (DAM)**.
 
 **Módulos Evaluados:**
-- **0489 PMDM:** Programación Multimedia y Dispositivos Móviles (RA2.b, RA2.d, RA2.g, RA2.j, RA2.k, RA2.l, RA2.m, RA2.n).
-- **0486 AD:** Acceso a Datos (RA4.b, RA4.d, RA4.e, RA4.f, RA4.g, RA4.i).
-- **0490 PSP:** Programación de Servicios y Procesos (RA2.a, RA2.c, RA2.e).
+- **0489 PMDM:** Programación Multimedia y Dispositivos Móviles (`RA2.b`, `RA2.d`, `RA2.g`, `RA2.j`, `RA2.k`, `RA2.l`, `RA2.m`, `RA2.n`).
+- **0486 AD:** Acceso a Datos (`RA4.b`, `RA4.d`, `RA4.e`, `RA4.f`, `RA4.g`, `RA4.i`).
+- **0490 PSP:** Programación de Servicios y Procesos (`RA2.a`, `RA2.c`, `RA2.e`).
+
+🌐 **URL Pública en Firebase Hosting:**  
+👉 **[https://proyectodam-56a61.web.app](https://proyectodam-56a61.web.app)** *(y [https://proyectodam-56a61.firebaseapp.com](https://proyectodam-56a61.firebaseapp.com))*
 
 ---
 
 ## 1. Descripción del Proyecto
 
-`dam_proyect` es una aplicación móvil y web desarrollada con **Flutter** y **Dart**, que integra autenticación y almacenamiento en tiempo real mediante **Firebase (Authentication, Cloud Firestore y Firebase Storage)**, mapas interactivos con **OpenStreetMap (flutter_map)** y geolocalización.
+`dam_proyect` es una aplicación multiplataforma (Android y Web) desarrollada con **Flutter** y **Dart**, conectada a **Firebase (Authentication con Email/Password y Google Sign-In, Cloud Firestore)**, mapas interactivos **OpenStreetMap (`flutter_map`)**, posicionamiento **GPS real (`geolocator`)** y concurrencia real con **`Isolates`**.
 
-La aplicación permite la interacción entre usuarios a través de mensajería instantánea en tiempo real, personalización de perfiles con fotografías de cámara/galería, un asistente inteligente de planificación de viajes y la exploración de destinos turísticos en vista de mapa y en vista de cuadrícula.
+Toda la persistencia de fotografías se almacena como **miniatura en formato Base64 (`< 300 KB`) dentro del propio documento de Firestore**, funcionando al 100 % en el plan gratuito (Spark) y contra la **Firebase Emulator Suite** local sin gastar cuota.
 
 ---
 
-## 2. Configuración de Firebase y Ficheros Excluidos
+## 2. Bloque 1: Entrar con Google, Huellas SHA, Cliente OAuth y `.gitignore`
 
-### Ficheros de Configuración Necesarios
-Para conectar la aplicación con Firebase en un entorno de desarrollo o producción, se requieren los siguientes ficheros de configuración según la plataforma:
-- **Android:** `android/app/google-services.json` (contiene el ID del proyecto, número de proyecto y clave API de Google Services para Android).
-- **iOS:** `ios/Runner/GoogleService-Info.plist` (configuración del paquete de la app de iOS).
-- **Flutter / Multiplataforma:** `lib/firebase_options.dart` (fichero generado automáticamente mediante FlutterFire CLI con las claves de plataforma).
-
-### Por qué NO deben subirse al Repositorio Git
-Estos ficheros contienen **claves de API públicas, identificadores de proyecto y credenciales de cliente OAuth**. Subir estos archivos a un repositorio público o compartido implica:
-1. **Riesgo de Seguridad:** Exposición indeseada de la cuota del proyecto de Firebase y posibilidad de uso no autorizado por terceros.
-2. **Buenas Prácticas de Desarrollo:** Cada entorno (desarrollo, pruebas, producción) debe poseer su propio proyecto de Firebase aislado.
-
-Por esta razón, estos ficheros han sido incluidos explícitamente en el archivo `.gitignore`:
+### Ficheros de Configuración Excluidos del Repositorio (`.gitignore`)
+Para evitar exponer claves de API o identificadores de cliente OAuth en GitHub (*"una clave subida a GitHub es una clave quemada"*), los ficheros sensibles están excluidos en [.gitignore](file:///c:/Proyectos%20Flutter/dam_proyect/.gitignore):
 ```gitignore
-# Firebase configuration files (contienen claves de API y credenciales de proyecto)
 android/app/google-services.json
 lib/firebase_options.dart
 ios/Runner/GoogleService-Info.plist
 ```
+En su lugar, el repositorio incluye las plantillas limpias:
+- [android/app/google-services.json.example](file:///c:/Proyectos%20Flutter/dam_proyect/android/app/google-services.json.example)
+- [lib/firebase_options.dart.example](file:///c:/Proyectos%20Flutter/dam_proyect/lib/firebase_options.dart.example)
 
-### Cómo configurar el proyecto en un equipo nuevo
-Para que el proyecto compile y funcione en una máquina limpia:
-1. Revisa las plantillas de ejemplo incluidas en el repositorio:
-   - `android/app/google-services.json.example`
-   - `lib/firebase_options.dart.example`
-2. Descarga tu propio `google-services.json` desde la [Consola de Firebase](https://console.firebase.google.com/) y colócalo en `android/app/google-services.json`.
-3. Alternativamente, ejecuta el comando oficial de la CLI de FlutterFire en la raíz del proyecto:
+### Huellas Digitales SHA-1 / SHA-256 y Configuración del Cliente OAuth
+Para que el inicio de sesión con Google (`google_sign_in`) funcione en Android y navegador Web:
+1. **Extracción de las huellas digitales del keystore de depuración:**
+   Ejecutando `keytool` sobre `~/.android/debug.keystore` (o `./gradlew signingReport` desde `android/`):
    ```bash
-   flutterfire configure
+   keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
    ```
-   Esto generará un nuevo `lib/firebase_options.dart` vinculado a tu proyecto de Firebase.
+   Formato de las huellas registradas en la consola para el equipo de desarrollo (valores enmascarados por seguridad):
+   - **SHA-1:** `AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD` *(extraída de `debug.keystore` local)*
+   - **SHA-256:** `00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF`
+2. **Registro en Firebase Console y Cliente OAuth 2.0:**
+   - En *Firebase Console > Configuración del proyecto > Tus aplicaciones > App Android (`com.example.dam_proyect`)*, se añaden las huellas `SHA-1` y `SHA-256`.
+   - En *Authentication > Sign-in method*, se habilita el proveedor **Google**, lo cual genera automáticamente el **ID de cliente OAuth 2.0 para Android y para Web** en Google Cloud Console y dentro de `google-services.json`.
+   - Para navegador Web y Firebase Hosting, los dominios `localhost` y `proyectodam-56a61.web.app` quedan autorizados en *Authentication > Settings > Authorized domains*.
+3. **Vinculación con el perfil de Firestore y manejo de cancelación ([auth_service.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/services/auth_service.dart) y [login_screen.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/screens/login_screen.dart)):**
+   - Si el usuario cierra la ventana emergente o cancela la selección de cuenta (`googleUser == null` o `popup-closed-by-user`), `signInWithGoogle()` devuelve `null` y la interfaz muestra un `SnackBar` avisando de la cancelación sin producir errores ni colgar la pantalla.
+   - Si el acceso tiene éxito, `FirestoreService.syncGoogleUserProfile()` comprueba si ya existe el documento en `profiles/{uid}`: **si entra alguien nuevo, le crea el perfil** con su nombre, correo y foto; **si ya existía, recupera su perfil** respetando sus datos personalizados.
 
 ---
 
-## 3. Arquitectura del Código y Explicación por Módulos
+## 3. Bloque 2: Las 4 Consultas de Firestore, Índices y Decisión `snapshots()` vs `get()`
 
-El código sigue una arquitectura limpia en capas (**Modelos, Servicios y Pantallas**) que separa la interfaz gráfica de la lógica de acceso a datos y autenticación.
+### Colección de 20+ Documentos y las 4 Consultas en Pantalla
+La colección `destinations` cuenta con al menos **20 documentos** estructurados (con `GeoPoint`, `Timestamp`, `categoria`, `rating`, `imagenUrl` Base64/URL y `creadorId`). En la pantalla **Destinos Grid** ([grid_explore_screen.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/screens/grid_explore_screen.dart)) y en [firestore_service.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/services/firestore_service.dart) se pueden ejecutar en vivo las 4 consultas:
+1. **`where` con dos condiciones (`queryDestinationsByCategoryAndMinRating`):**
+   ```dart
+   _destinationsRef
+       .where('categoria', isEqualTo: categoria)
+       .where('rating', isGreaterThanOrEqualTo: minRating)
+       .orderBy('rating', descending: true)
+       .get();
+   ```
+2. **`orderBy` con `limit` (`queryTopRatedDestinations`):**
+   ```dart
+   _destinationsRef.orderBy('rating', descending: true).limit(5).get();
+   ```
+3. **Rango sobre una fecha `Timestamp` (`queryDestinationsByDateRange`):**
+   ```dart
+   _destinationsRef
+       .where('fechaCreacion', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+       .where('fechaCreacion', isLessThanOrEqualTo: Timestamp.fromDate(end))
+       .orderBy('fechaCreacion', descending: true)
+       .get();
+   ```
+4. **Paginación con cursor `startAfterDocument` (`queryDestinationsPaginated`):**
+   ```dart
+   Query<Destino> query = _destinationsRef.orderBy('titulo').limit(pageSize);
+   if (lastDocument != null) {
+     query = query.startAfterDocument(lastDocument);
+   }
+   ```
 
-```text
-lib/
-├── main.dart                       # Punto de entrada y enrutador por nombre (onGenerateRoute)
-├── firebase_options.dart.example   # Plantilla de configuración de Firebase
-├── models/                         # Clases de modelo de datos tipadas
-│   ├── mensaje.dart                # Modelo de mensaje de chat con Timestamp y estado de lectura
-│   ├── perfil.dart                 # Modelo de perfil de usuario (soporta URL e imagen Base64)
-│   └── trip_preferences.dart       # Modelos TripPreferences y TripWizardArgs para el asistente
-├── services/                       # Capa de servicios y lógica de datos
-│   ├── auth_service.dart           # Servicio Firebase Auth con mapeo de errores en español
-│   ├── firestore_service.dart      # Persistencia NoSQL tipada mediante withConverter
-│   ├── storage_service.dart        # Subida a Firebase Storage con fallback a Base64
-│   └── onboarding_service.dart     # Persistencia local con SharedPreferences
-└── screens/                        # Pantallas e interfaces de usuario
-    ├── splash_screen.dart          # Comprobación de estado de entrada y redirección
-    ├── onboarding_screen.dart      # Guía inicial deslizante (PageView) con botón saltar
-    ├── login_screen.dart           # Formulario de inicio de sesión
-    ├── register_screen.dart        # Formulario de registro y creación automática de perfil
-    ├── home_screen.dart            # Pantalla principal con barra inferior de 3 secciones
-    ├── chat_screen.dart            # Chat en tiempo real con cancelación de StreamSubscription
-    ├── newmessage_screen.dart      # Búsqueda por email y envío de nuevos mensajes
-    ├── map_explore_screen.dart     # Mapa interactivo OpenStreetMap (flutter_map) con geocodificación
-    ├── grid_explore_screen.dart    # Sección 3: Vista en cuadrícula (GridView) de destinos
-    ├── profile_screen.dart         # Edición de perfil, cámara/galería y compresión de fotos
-    ├── trip_wizard_screen.dart     # Asistente por pasos para personalización de viajes
-    └── trip_detail_screen.dart     # Generación dinámica de recomendaciones de viajes
+Los índices compuestos requeridos por estas consultas están declarados en el fichero [firestore.indexes.json](file:///c:/Proyectos%20Flutter/dam_proyect/firestore.indexes.json) del repositorio (no creados a mano en la consola).
+
+### Por qué cada pantalla usa `snapshots()` (Tiempo Real) o `get()` (Lectura Única)
+
+Escuchar toda la base de datos con `snapshots()` de forma indiscriminada multiplica el consumo de lecturas de Firestore, drena batería manteniendo sockets abiertos y rompe los cursores de paginación. Por ello, **cada pantalla toma una decisión explícita**:
+
+| Pantalla / Operación | Método Elegido | Justificación Técnica |
+|---|---|---|
+| **Chat Individual (`ChatScreen`)** | **`snapshots()`** | En una conversación de mensajería instantánea el usuario necesita recibir los mensajes entrantes del interlocutor al instante en pantalla sin tener que pulsar un botón de refresco. Además, las suscripciones `StreamSubscription` se cancelan rigurosamente en `dispose()`. |
+| **Bandeja de Conversaciones (`HomeScreen` - Pestaña Chats)** | **`snapshots()`** | Permite actualizar en vivo el indicador de mensajes no leídos y el último mensaje recibido mientras el usuario está en la pantalla principal. |
+| **Directorio de Contactos (`HomeScreen` - Pestaña Contactos)** | **`get()`** | La lista de usuarios registrados cambia con poca frecuencia; basta una lectura puntual al cargar la sección (con botón de recarga/reintento), ahorrando lecturas continuas innecesarias. |
+| **Catálogo y 4 Consultas (`GridExploreScreen`)** | **`get()`** | Las 4 consultas responden a preguntas concretas a petición del usuario (cambiar filtro, pedir Top 5, elegir rango de fechas o pulsar *"Cargar siguiente página"* con `startAfterDocument`). Usar `snapshots()` en una lista paginada invalidaría el cursor `lastDocument` cada vez que cambiase un documento. |
+| **Mapa de Exploración (`MapExploreScreen`)** | **`get()`** | Los marcadores geográficos (`GeoPoint`) de los destinos se leen una vez al abrir el mapa y se pasan al `Isolate` para calcular las distancias respecto al usuario. |
+| **Mi Perfil (`ProfileScreen`) y Nuevo Mensaje (`NewMessageScreen`)** | **`get()`** | Al abrir el formulario de edición de perfil o al comprobar si existe un correo destinatario (`getProfileByEmail`), solo se necesita el estado actual del documento en ese instante. |
+
+---
+
+## 4. Bloque 3: Modificar (`update`), Borrar (`delete`) y Reglas de Seguridad
+
+- En **Destinos Grid** ([grid_explore_screen.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/screens/grid_explore_screen.dart)) y en **Chat** ([chat_screen.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/screens/chat_screen.dart)), el usuario puede editar (`update`) y borrar (`delete`) **únicamente los documentos creados por él mismo** (`creadorId == currentUser.uid`).
+- Antes de ejecutar `delete()`, se muestra siempre un `AlertDialog` modal de confirmación. Si la operación falla, se captura la excepción y se informa en pantalla.
+- **Lo ajeno no se puede tocar:** En la interfaz, los documentos de otros usuarios se muestran con la etiqueta *"Documento ajeno"* y no ofrecen botones de edición ni borrado. Además, las reglas de seguridad en [firestore.rules](file:///c:/Proyectos%20Flutter/dam_proyect/firestore.rules) lo impiden a nivel de servidor aunque alguien intentara invocar el SDK directamente:
+  ```javascript
+  match /destinations/{destinationId} {
+    allow read: if isSignedIn();
+    allow create: if isSignedIn();
+    allow update, delete: if isSignedIn() && resource.data.creadorId == request.auth.uid;
+  }
+  ```
+
+---
+
+## 5. Bloque 4: Cámara/Galería, Compresión en `Isolate` y el Límite de 1 MB de Firestore
+
+### Permisos Declarados y Denegación Tratada
+- Declarados en Android ([AndroidManifest.xml](file:///c:/Proyectos%20Flutter/dam_proyect/android/app/src/main/AndroidManifest.xml): `CAMERA`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`) y en iOS ([Info.plist](file:///c:/Proyectos%20Flutter/dam_proyect/ios/Runner/Info.plist): `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`).
+- Si el usuario deniega el permiso de cámara o galería, se captura la `PlatformException` y se muestra un cuadro de diálogo explicando qué permiso falta y cómo activarlo en los Ajustes del sistema sin colgar la app.
+
+### Por qué Cloud Firestore tiene un límite de 1 MB por documento y por qué se comprime antes
+1. **El límite físico de 1 MiB (`1.048.576 bytes`) de Firestore:** Cloud Firestore es una base de datos documental optimizada para consultas rápidas e indexación en memoria. Por diseño arquitectónico, **cada documento individual tiene un tamaño máximo estricto de 1 MiB (1 MB)**, sumando el nombre de todas las claves, metadatos (`GeoPoint`, `Timestamp`, `Strings`) y el contenido de los campos.
+2. **El peso de una foto actual y la penalización del Base64:** Una fotografía tomada con la cámara de un móvil actual ocupa entre **3 MB y 8 MB** en JPEG original. Además, al codificar bytes binarios en texto **Base64** (que representa cada 3 bytes binarios mediante 4 caracteres ASCII), el tamaño resultante **aumenta un ~33 % adicional**.
+3. **Por qué es obligatorio comprimir antes a `< 300 KB`:** Si intentásemos guardar una foto de cámara directamente en Base64 dentro del documento de perfil o destino, superaría ampliamente el límite de 1 MB y Firestore abortaría la operación con el error `INVALID_ARGUMENT: maximum size exceeded`. Al redimensionar la imagen a miniatura (`<= 480 px`) y comprimirla en JPEG dentro del `Isolate` por debajo de `200 KB` binarios (`< 270 KB` ya codificada en Base64, siempre **`< 300 KB`**), garantizamos que el documento completo ocupe menos de una tercera parte del límite de 1 MB, cargue de forma instantánea en listas y mapas y sea viable para sincronización offline en la Fase 2.
+
+---
+
+## 6. Bloque 5: Comparativa de Tecnologías de Localización (GPS, Red y Proveedor Combinado)
+
+| Característica | 1. GPS por Satélite (`GNSS`) | 2. Localización por Red (`Wi-Fi / Antenas Móviles`) | 3. Proveedor Combinado (`Fused Location Provider`) |
+|---|---|---|---|
+| **Cómo funciona** | Calcula la posición por trilateración de señales de radiofrecuencia emitidas por satélites (GPS, Galileo, GLONASS). | Triangula la posición usando los identificadores de celdas de telefonía móvil (Cell ID) y las direcciones MAC de redes Wi-Fi cercanas. | Combina algorítmicamente el chip GPS, redes Wi-Fi, antenas móviles y los sensores inerciales del dispositivo (acelerómetro, giroscopio, brújula). |
+| **Precisión habitual** | **Muy alta:** entre `3 y 10 metros` en exteriores despejados. | **Media / Baja:** entre `20 y 50 metros` con Wi-Fi urbano; de `200 metros a 2 km` solo con antenas celulares. | **Adaptativa y óptima:** `3 a 15 metros` en exteriores y `15 a 40 metros` en interiores. |
+| **Consumo de batería** | **Muy alto.** Mantener encendido el receptor GNSS y procesar efemérides drena la batería rápidamente. | **Muy bajo.** Reutiliza los barridos de red Wi-Fi y la conexión celular que el sistema operativo ya realiza. | **Eficiente e inteligente.** Desactiva el GPS cuando el acelerómetro detecta que el usuario está quieto o bajo techo, ahorrando batería. |
+| **Tiempo de primera fijación (TTFF)** | **Lento (`5 a 30 segundos`).** Requiere línea de visión directa al cielo; en interiores suele fallar por `TimeoutException`. | **Instantáneo (`< 1 - 2 segundos`).** Funciona perfectamente dentro de edificios y sótanos con Wi-Fi. | **Inmediato (`< 1 segundo`).** Entrega al instante una posición aproximada de red y la refina en segundos con el GPS. |
+| **Cuándo usar cada una** | Aplicaciones de navegación paso a paso en carretera, rutas de senderismo en montaña o topografía a cielo abierto sin cobertura móvil. | Aplicaciones de clima por ciudad, recomendaciones generales de barrio o apps en segundo plano donde prima no gastar batería. | **Uso general recomendado en apps móviles modernas** (como `dam_proyect`): mapas urbanos, buscadores «cerca de mí» y etiquetado geográfico de contenidos. |
+
+En [location_service.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/services/location_service.dart) se emplea `geolocator` pidiendo el permiso en el momento oportuno y tratando de forma específica **permiso denegado**, **denegación permanente**, **GPS apagado** y **tiempo de espera agotado (`TimeoutException` de 12 s)**, guardando la coordenada leída como `GeoPoint` junto con su `Timestamp` tanto en `profiles` como en `destinations`.
+
+---
+
+## 7. Bloque 6 y PSP (`0490 RA2.a, 2.c, 2.e`): Qué va en `Isolate`, qué NO y por qué
+
+### Qué se ejecuta en un `Isolate` en este proyecto
+1. **Compresión y redimensionado de fotografías ([image_isolate_service.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/services/image_isolate_service.dart)):** Decodificar un mapa de bits de varios megapíxeles, reescalarlo píxel a píxel con interpolación y codificarlo en JPEG en bucle hasta bajar de `300 KB` es una tarea **intensiva en CPU (*CPU-bound*)** que toma entre `150 ms y 800 ms`. Si se ejecutara en el hilo principal (*UI Isolate*), bloquearía el renderizado a `60 fps` (un fotograma dura `16.6 ms`), congelando el desplazamiento de la pantalla.
+2. **Cálculo Haversine y ordenación de la lista «Cerca de mí» ([distance_isolate_service.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/services/distance_isolate_service.dart)):** Recibe la posición del usuario y los `GeoPoint` de los documentos en un `Isolate.spawn`, calcula la distancia esférica para cada uno, comunica el porcentaje de progreso (`0% ... 100%`) por `SendPort`/`ReceivePort` y devuelve la lista ordenada de menor a mayor distancia.
+
+### Qué NO va en un `Isolate` y por qué
+- **Operaciones de entrada/salida y red (*I/O-bound*):** Las consultas a Cloud Firestore (`get()`, `snapshots()`), la autenticación OAuth o las peticiones HTTP a Nominatim **no deben meterse en un `Isolate`**, porque ya son asíncronas no bloqueantes gestionadas por el *Event Loop* y el sistema operativo mientras esperan respuesta de red.
+- **Actualización de Widgets (`setState`, `BuildContext`, `Navigator`) y Plugins con canales nativos directos:** Solo el *Root Isolate* tiene acceso al árbol de Widgets de Flutter; el `Isolate` trabajador únicamente envía mensajes serializables (`double`, `Map`, `Uint8List`) a través de su `SendPort`.
+
+### Por qué ordenar 20 documentos NO necesita un `Isolate` en un caso real (y por qué lo hacemos aquí)
+Siendo rigurosos desde el punto de vista de sistemas (`0490 PSP`): calcular 20 fórmulas de Haversine y ejecutar `List.sort` sobre **20 documentos** consume apenas **`~0.1 ms` de CPU**, muy por debajo del presupuesto de `16.6 ms` de un fotograma. En cambio, levantar un `Isolate.spawn`, reservar su memoria aislada (*heap* propio) y copiar la lista de entrada/salida por `SendPort` tiene un coste fijo (*overhead*) de **`5 a 15 ms`**.
+- **En producción:** Para 20 documentos sería más rápido hacerlo en el hilo principal; el `Isolate` de distancias solo empieza a ser rentable cuando la colección supera los **`5.000 - 10.000` puntos geográficos**.
+- **Por qué se hace aquí en un `Isolate`:** Se implementa deliberadamente con `Isolate.spawn` y comunicación de progreso por `ReceivePort` para **medirlo empíricamente, demostrar que la interfaz no se congela al mover el mapa durante el cálculo y acreditar el dominio de la comunicación entre hilos (`0490 PSP RA2.a, RA2.c, RA2.e`)**.
+
+---
+
+## 8. Bloque 7: Ejecución con Emuladores (`--dart-define`) y Datos Exportados
+
+### Datos de Prueba Exportados en el Repositorio (`./firebase_emulator_data`)
+El repositorio incluye la carpeta [firebase_emulator_data](file:///c:/Proyectos%20Flutter/dam_proyect/firebase_emulator_data) con los datos de prueba exportados de **Auth** (usuarios `alumno@dam.es` / `123456` y `compañero@dam.es` / `123456`) y **Firestore** (perfiles con `GeoPoint`, `Timestamp` y miniatura Base64, mensajes y los **20 destinos**).
+
+### Arrancar los Emuladores Importando los Datos con UN SOLO COMANDO
+```bash
+firebase emulators:start --import=./firebase_emulator_data --export-on-exit=./firebase_emulator_data
+```
+
+### Arrancar la Aplicación Conectada a los Emuladores (`--dart-define`)
+La conexión a los emuladores se activa exclusivamente mediante bandera de compilación (`bool.fromEnvironment('USE_EMULATOR')` en [lib/main.dart](file:///c:/Proyectos%20Flutter/dam_proyect/lib/main.dart)), nunca con un booleano escrito a mano:
+```bash
+# En navegador Chrome contra emuladores locales:
+flutter run -d chrome --dart-define=USE_EMULATOR=true
+
+# En emulador Android contra emuladores locales (usa automáticamente 10.0.2.2):
+flutter run -d android --dart-define=USE_EMULATOR=true
 ```
 
 ---
 
-## 4. Explicación Detallada de Decisiones Técnicas y Código
+## 9. Tabla de Pruebas en Android y en Navegador Web
 
-### A. Sistema de Rutas con Nombre (`onGenerateRoute` & `arguments`)
-- **Problema anterior:** La navegación construía widgets llamando directamente a `MaterialPageRoute(builder: (context) => ChatScreen(contacto: ...))` repartidos en múltiples lugares.
-- **Solución implementada:** Se ha centralizado la navegación en `lib/main.dart` utilizando `onGenerateRoute`.
-- **Funcionamiento:** Las pantallas navegan invocando `Navigator.pushNamed(context, '/chat', arguments: contacto)`. El generador de rutas extrae `settings.arguments` con verificación de tipos (`as Perfil`, `as TripPreferences`, `as TripWizardArgs`), garantizando un desacoplamiento total entre pantallas y facilitando futuras integraciones de enlaces profundos (Deep Links).
-
-### B. Barra Inferior con 3 Secciones y Estados de Error en Pantalla
-La pantalla principal (`HomeScreen`) incluye una barra inferior de tres destinos (`NavigationBar`):
-1. **Sección 1: Social (`Icons.people`):** Pestañas internas para conversiones activas (Chats), directorio de usuarios (Contactos) y edición del perfil personal.
-2. **Sección 2: Explorar (`Icons.map`):** Mapa vectorial OpenStreetMap con búsqueda de ciudades (API Nominatim), centrado del usuario y ajuste de radio de acción.
-3. **Sección 3: Destinos Grid (`Icons.grid_view`):** Catálogo interactivo organizado en una cuadrícula de 2 columnas (`GridView.builder`) con filtrado por categorías.
-
-#### Gestión de Estados en Pantalla (Carga, Éxito, Vacío y Error)
-Todas las secciones gestionan explícitamente cuatro estados de interfaz:
-- **Carga:** Muestra un indicador `CircularProgressIndicator` centrado.
-- **Éxito:** Muestra la lista, mapa o cuadrícula de datos.
-- **Vacío:** Muestra un mensaje informativo si no existen registros.
-- **Error con Reintento:** Si falla la conexión a Firestore o la API de mapas, la pantalla muestra un widget de error con icono descriptivo, mensaje claro y un botón **"Reintentar"** que vuelve a solicitar los datos.
-- **Simulación de Errores:** Se ha integrado un botón con icono de insecto (`bug_report_outlined`) en la barra de herramientas para permitir probar en pantalla el estado de error y su recuperación con 1 clic durante la evaluación.
-
-### C. Consultas Firestore: Lectura Única (`get()`) vs Tiempo Real (`snapshots()`)
-- **`snapshots()` (Escuchas en tiempo real):** Utilizadas en `getReceivedMessages` y `getSentMessages` dentro de `ChatScreen` y `HomeScreen`. Al tratarse de mensajería instantánea, se requiere que los nuevos mensajes aparezcan automáticamente en pantalla sin intervención del usuario.
-- **`get()` (Lectura puntual):** Utilizada en `getProfileByEmail`, `getProfileByUid` y `getAllProfiles`. Se lee el documento de forma puntual al iniciar sesión o buscar un usuario para optimizar el consumo de la cuota de Firestore.
-- **Cancelación en `dispose()`:** Todas las suscripciones `StreamSubscription` mantenidas en los estados de los widgets son canceladas de forma explícita en el método `dispose()` para evitar fugas de memoria y consumo de red innecesario.
-
-### D. Procesamiento de Fotos de Perfil y Fallback a Base64
-- La aplicación permite capturar o seleccionar fotos desde la cámara y la galería usando `image_picker`.
-- Intenta subir la imagen procesada a **Firebase Storage**.
-- Si Firebase Storage no estuviera disponible (reglas estrictas o trabajo offline), la app convierte automáticamente la miniatura a una cadena **Base64** (`data:image/jpeg;base64,...`) almacenándola dentro del propio documento de Firestore, asegurando que la foto de perfil se muestre siempre correctamente tanto en Android como en navegador web.
+| Caso de Prueba | Qué se verifica | Resultado en Emulador Android | Resultado en Navegador (Chrome) |
+|---|---|---|---|
+| **1. Acceso con Google (Éxito y Cancelación)** | Cerrar selector muestra aviso de cancelación; elegir cuenta inicia sesión y crea/recupera `profiles/{uid}`. | ✅ Correcto (`GoogleSignIn` nativo + `SnackBar` al cancelar) | ✅ Correcto (`signInWithPopup` + `SnackBar` al cerrar ventana) |
+| **2. Las 4 Consultas sobre 20+ Documentos** | Funcionan `where` (2 cond.), `orderBy`+`limit(5)`, rango de fechas `Timestamp` y paginación `startAfterDocument`. | ✅ Correcto (20 docs cargados y filtrados en cuadrícula) | ✅ Correcto (20 docs cargados y paginados de 6 en 6) |
+| **3. Editar y Borrar Propios / Bloqueo de Ajenos** | `update` y `delete` con `AlertDialog` en documentos propios; documentos ajenos sin botones y bloqueados por `firestore.rules`. | ✅ Correcto (confirma antes de borrar; impide tocar ajenos) | ✅ Correcto (confirma antes de borrar; impide tocar ajenos) |
+| **4. Cámara / Galería y Compresión en `Isolate`** | Selecciona foto, muestra barra de progreso `%` del `Isolate` sin congelar el scroll y guarda Base64 `< 300 KB` en Firestore. | ✅ Correcto (miniatura `~45 KB < 300 KB` visible en lista y detalle) | ✅ Correcto (miniatura `< 300 KB` codificada en Base64) |
+| **5. Permiso de Cámara / Galería Denegado** | Al rechazar el permiso, no se cuelga la pantalla y muestra diálogo indicando cómo habilitarlo en Ajustes. | ✅ Correcto (diálogo modal explicativo de permiso denegado) | ✅ Correcto (control de cancelación/denegación del navegador) |
+| **6. Posición GPS Real (`geolocator`)** | Lee coordenadas, centra el mapa y guarda `GeoPoint` + `Timestamp` tipados en el documento de Firestore. | ✅ Correcto (`GeoPoint` y `Timestamp` guardados y leídos) | ✅ Correcto (`GeoPoint` y `Timestamp` guardados y leídos) |
+| **7. Permiso Localización Denegado / GPS Apagado / Timeout** | Al denegar el permiso o apagar el GPS, muestra `AlertDialog` con botón para abrir Ajustes o Reintentar sin colgar la UI. | ✅ Correcto (detecta GPS apagado y permiso denegado con diálogo) | ✅ Correcto (detecta permiso bloqueado en navegador con diálogo) |
+| **8. Mapa `flutter_map` y «Cerca de mí» en `Isolate`** | Atribución OpenStreetMap visible, 1 marcador por doc, detalle al tocar marcador y lista «Cerca de mí» ordenada en `Isolate` con progreso. | ✅ Correcto (20 marcadores, atribución visible y lista ordenada por km) | ✅ Correcto (20 marcadores, atribución visible y lista ordenada por km) |
+| **9. Trabajo sin Conexión / Fallo de Red** | Al cortar la red o simular fallo, las pantallas muestran estado de error con botón **"Reintentar"** y Firestore sirve caché local. | ✅ Correcto (widget de error y recuperación con botón Reintentar) | ✅ Correcto (widget de error y recuperación con botón Reintentar) |
+| **10. Emuladores (`--dart-define`) y Hosting Web** | Conecta a Auth (`9099`) y Firestore (`8080`) con `--dart-define=USE_EMULATOR=true` y abre desde URL pública de Firebase Hosting. | ✅ Correcto (`10.0.2.2:9099` y `10.0.2.2:8080`) | ✅ Correcto (`localhost` y publicado en `proyectodam-56a61.web.app`) |
 
 ---
 
-## 5. Instrucciones de Compilación y Ejecución
+## 10. Bitácora de Uso de Inteligencia Artificial
 
-### Requisitos Previos
-- Flutter SDK (versión 3.x o superior).
-- Android Studio con emulador Android configurado.
-- Navegador Google Chrome para ejecución web.
-
-### Pasos para Ejecutar
-1. Instalar dependencias del proyecto:
-   ```bash
-   flutter pub get
-   ```
-2. Comprobar que no existen advertencias de análisis estático:
-   ```bash
-   flutter analyze
-   ```
-3. Ejecutar en navegador Google Chrome:
-   ```bash
-   flutter run -d chrome
-   ```
-4. Ejecutar en emulador Android:
-   ```bash
-   flutter run -d android
-   ```
-
----
-
-## 6. Tabla de Pruebas de Funcionamiento
-
-| Prueba | Resultado Esperado | Resultado Obtenido |
-|---|---|---|
-| **Arranque en Chrome** | La app inicia correctamente mostrando el Splash. | ✅ Correcto |
-| **Arranque en Android** | La app inicia en el emulador sin errores. | ✅ Correcto |
-| **Paso por Onboarding** | Muestra 3 diapositivas desglosables y guarda el estado en `SharedPreferences`. | ✅ Correcto |
-| **Rutas con Nombre** | Navega a `/chat`, `/trip_wizard` y `/trip_detail` pasando argumentos tipados. | ✅ Correcto |
-| **Barra Inferior (3 Secciones)** | Navega entre Social, Mapa y Cuadrícula Grid sin reiniciar el estado. | ✅ Correcto |
-| **Vista en Cuadrícula** | La 3.ª sección rindea tarjetas en `GridView.builder` de 2 columnas. | ✅ Correcto |
-| **Estado de Error en Pantalla** | Muestra el widget de error y el botón "Reintentar" funciona para recuperar la interfaz. | ✅ Correcto |
-| **Foto de Perfil (Cámara/Galería)** | Selecciona foto y actualiza en Firestore (URL Storage o Base64). | ✅ Correcto |
-| **Mensajería Tiempo Real** | Los mensajes se envían y reciben mediante `snapshots()` ordenados cronológicamente. | ✅ Correcto |
-| **Cierre de Sesión** | Cierra la sesión en Firebase Auth y vuelve a la pantalla `/login`. | ✅ Correcto |
-
----
-
-## 7. Historial de Commits
-
-El desarrollo se ha registrado mediante commits claros y explicativos que documentan cada evolución del proyecto:
-
-1. `docs(firebase): excluir ficheros de configuracion sensibles de git y anadir plantillas .example`
-2. `refactor(navigation): implementar rutas con nombre (named routes) y paso de argumentos`
-3. `feat(ui): anadir tercera seccion a la barra inferior con vista en cuadricula (GridView) y estados de error con reintento`
-4. `docs(code): documentar clases, servicios y pantallas con explicaciones de funcionamiento y diseno`
-5. `docs(readme): actualizar README con documentacion de Firebase, arquitectura, rutas y tabla de pruebas`
-
----
-
-## 8. Uso de Inteligencia Artificial
-
-El uso de asistentes de IA para asistencia en refactorizaciones, diseño de arquitectura y documentación se encuentra registrado de forma transparente en el archivo `IA.md`.
+El registro transparente del uso de asistentes de IA durante el proyecto se encuentra detallado en el fichero [IA.md](file:///c:/Proyectos%20Flutter/dam_proyect/IA.md).
