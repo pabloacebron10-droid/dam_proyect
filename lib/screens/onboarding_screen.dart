@@ -1,7 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../services/onboarding_service.dart';
+import 'package:dam_proyect/services/onboarding_service.dart';
 
+/// Pantalla de Introducción / Guía del Usuario (`OnboardingScreen`).
+///
+/// **Por qué:** Presenta una serie de 3 diapositivas interactivas utilizando `PageView`
+/// con soporte táctil y de ratón (escritorio/web). Guarda el estado en `SharedPreferences`
+/// al finalizar o pulsar 'Saltar' para no volver a mostrar la guía en futuros arranques.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -19,32 +24,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // =========================
-          // PÁGINAS DEL ONBOARDING
-          // =========================
+          // Páginas del Onboarding
           Expanded(
             child: PageView(
               controller: _pageController,
-
-              // Permite deslizar con pantalla táctil y ratón
               scrollBehavior: const MaterialScrollBehavior().copyWith(
                 dragDevices: {
                   PointerDeviceKind.touch,
                   PointerDeviceKind.mouse,
                 },
               ),
-
-              // Actualizamos la página actual
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
                 });
               },
-
               children: [
-                // =========================
-                // PÁGINA 1
-                // =========================
+                // Diapositiva 1
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -54,9 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         'assets/images/onboarding1.jpg',
                         height: 250,
                       ),
-
                       const SizedBox(height: 30),
-
                       const Text(
                         '¡Bienvenido a nuestra app!',
                         style: TextStyle(
@@ -65,23 +59,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-
                       const SizedBox(height: 16),
-
                       const Text(
                         'Descubre todo lo que puedes hacer con nuestra aplicación de forma sencilla y rápida.',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
 
-                // =========================
-                // PÁGINA 2
-                // =========================
+                // Diapositiva 2
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -91,9 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         'assets/images/onboarding2.jpg',
                         height: 250,
                       ),
-
                       const SizedBox(height: 30),
-
                       const Text(
                         'Descubre todo lo que tenemos',
                         style: TextStyle(
@@ -102,23 +88,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-
                       const SizedBox(height: 16),
-
                       const Text(
                         'Explora las diferentes funciones de la aplicación y encuentra todo lo que necesitas.',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
 
-                // =========================
-                // PÁGINA 3
-                // =========================
+                // Diapositiva 3
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -135,9 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 220,
                         ),
                       ),
-
                       const SizedBox(height: 35),
-
                       const Text(
                         'Todo listo para comenzar',
                         style: TextStyle(
@@ -146,9 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-
                       const SizedBox(height: 16),
-
                       const Text(
                         'Ya conoces lo básico. Ahora es tu turno de descubrir todo lo que puedes hacer.',
                         style: TextStyle(
@@ -157,9 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-
                       const SizedBox(height: 35),
-
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -190,9 +164,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          // =========================
-          // INDICADORES DE PÁGINA
-          // =========================
+          // Indicadores de puntos animados de página
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -215,14 +187,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: 68,
             child: (_currentPage == 0 || _currentPage == 1)
                 ? TextButton(
-              onPressed: () async {
-                await _onboardingService.setOnboardingSeen();
+                    onPressed: () async {
+                      await _onboardingService.setOnboardingSeen();
 
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context,'/register');
-              },
-              child: const Text('Saltar'),
-            )
+                      if (!mounted) return;
+                      Navigator.pushReplacementNamed(context, '/register');
+                    },
+                    child: const Text('Saltar'),
+                  )
                 : null,
           ),
           const SizedBox(height: 20),

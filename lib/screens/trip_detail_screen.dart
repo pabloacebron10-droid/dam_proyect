@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:dam_proyect/models/trip_preferences.dart';
 
+/// Pantalla de Resultados y Detalles del Viaje (`TripDetailScreen`).
+///
+/// **Por qué:** Recibe las `preferences` (`TripPreferences`) enviadas vía rutas con nombre (`arguments`),
+/// procesa los criterios elegidos por el usuario (duración, presupuesto, ambiente y estilo gastronómico)
+/// y genera dinámicamente las tarjetas de recomendación clasificadas por pestañas (Restaurantes, Hotel, Apartamento, Ocio).
 class TripDetailScreen extends StatefulWidget {
   final TripPreferences preferences;
 
@@ -76,7 +81,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       return [
         {
           'title': 'Apartamento Turístico $cityName',
-          'subtitle': 'Apartamento completo para ${prefs.tripDays} días de estancia con ambiente ideal',
+          'subtitle':
+              'Apartamento completo para ${prefs.tripDays} días de estancia con ambiente ideal',
           'tag': 'Recomendación Apartamento',
           'rating': '4.8',
           'price': priceSymbol,
@@ -89,14 +95,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       return [
         {
           'title': 'Ruta de Ocio ($actText) en $cityName',
-          'subtitle': 'Planificación a ritmo $paceText adaptado a ${prefs.tripDays} días de viaje',
+          'subtitle':
+              'Planificación a ritmo $paceText adaptado a ${prefs.tripDays} días de viaje',
           'tag': 'Ritmo $paceText',
           'rating': '4.9',
           'price': 'Gratis',
         },
         {
           'title': 'Experiencia Cultural y Destacados de $cityName',
-          'subtitle': 'Cultura y principales puntos de interés dentro del radio de ${prefs.radiusKm.toStringAsFixed(1)} km',
+          'subtitle':
+              'Cultura y principales puntos de interés dentro del radio de ${prefs.radiusKm.toStringAsFixed(1)} km',
           'tag': 'Puntos de Interés',
           'rating': '4.8',
           'price': '€15',
@@ -150,19 +158,24 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   runSpacing: 6,
                   children: [
                     Chip(
-                      avatar: const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
-                      label: Text('${prefs.tripDays} ${prefs.tripDays == 1 ? "día" : "días"}'),
+                      avatar: const Icon(Icons.calendar_today,
+                          size: 16, color: Colors.deepPurple),
+                      label: Text(
+                          '${prefs.tripDays} ${prefs.tripDays == 1 ? "día" : "días"}'),
                       backgroundColor: Colors.deepPurple.shade50,
                       side: BorderSide.none,
                     ),
                     Chip(
-                      avatar: const Icon(Icons.radar, size: 16, color: Colors.deepPurple),
-                      label: Text('Radio ${prefs.radiusKm.toStringAsFixed(1)} km'),
+                      avatar: const Icon(Icons.radar,
+                          size: 16, color: Colors.deepPurple),
+                      label:
+                          Text('Radio ${prefs.radiusKm.toStringAsFixed(1)} km'),
                       backgroundColor: Colors.deepPurple.shade50,
                       side: BorderSide.none,
                     ),
                     Chip(
-                      avatar: const Icon(Icons.restaurant, size: 16, color: Colors.deepPurple),
+                      avatar: const Icon(Icons.restaurant,
+                          size: 16, color: Colors.deepPurple),
                       label: Text(prefs.diningStyle.toUpperCase()),
                       backgroundColor: Colors.deepPurple.shade50,
                       side: BorderSide.none,
@@ -172,7 +185,6 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               ],
             ),
           ),
-
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -200,9 +212,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               ),
             ),
           ),
-
           const Divider(height: 1),
-
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -225,7 +235,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.deepPurple.shade50,
                                 borderRadius: BorderRadius.circular(12),
@@ -241,7 +252,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             ),
                             Row(
                               children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 18),
+                                const Icon(Icons.star,
+                                    color: Colors.amber, size: 18),
                                 const SizedBox(width: 4),
                                 Text(
                                   item['rating'] ?? '',
@@ -301,7 +313,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.deepPurple : Colors.grey.shade200,
+          backgroundColor:
+              isSelected ? Colors.deepPurple : Colors.grey.shade200,
           foregroundColor: isSelected ? Colors.white : Colors.black87,
           elevation: isSelected ? 2 : 0,
           shape: RoundedRectangleBorder(

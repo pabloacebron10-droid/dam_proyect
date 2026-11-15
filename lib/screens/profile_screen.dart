@@ -7,6 +7,13 @@ import 'package:dam_proyect/services/auth_service.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
 import 'package:dam_proyect/services/storage_service.dart';
 
+/// Pantalla de Gestión de Perfil de Usuario (`ProfileScreen`).
+///
+/// **Por qué:** Permite consultar y editar los datos del perfil (nombre y foto de perfil).
+/// Incluye selección de imagen mediante la cámara o la galería con `ImagePicker`.
+/// Intenta primero subir la foto a Firebase Storage y, si no fuese posible o si se opera sin conexión,
+/// recurre de forma transparente a codificar la miniatura en formato Base64 para almacenarla directamente
+/// dentro del documento de Firestore.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -33,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadProfile();
   }
 
+  /// Carga los datos del perfil del usuario actualmente autenticado desde Cloud Firestore.
   Future<void> _loadProfile() async {
     final user = _authService.getCurrentUser();
     if (user == null) {
@@ -72,6 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Permite seleccionar una foto utilizando la cámara o la galería del dispositivo.
   Future<void> _pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
@@ -99,6 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Despliega el menú modal inferior para elegir el origen de la fotografía (cámara o galería).
   void _showImageSourceModal() {
     showModalBottomSheet(
       context: context,
@@ -132,6 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Guarda los cambios introducidos en el perfil en Firebase Storage y Cloud Firestore.
   Future<void> _saveProfile() async {
     final user = _authService.getCurrentUser();
     if (user == null) return;
@@ -166,7 +177,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Aviso Storage: ${storageError.toString().replaceFirst('Exception: ', '')}'),
+                content: Text(
+                  'Aviso Storage: ${storageError.toString().replaceFirst('Exception: ', '')}',
+                ),
                 backgroundColor: Colors.orange.shade800,
                 duration: const Duration(seconds: 4),
               ),
@@ -207,7 +220,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al guardar: ${e.toString().replaceFirst('Exception: ', '')}'),
+          content: Text(
+            'Error al guardar: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
         ),
@@ -221,6 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Renderea el widget de imagen soportando selección en memoria, Base64 o URL remota HTTPS.
   Widget _buildAvatarWidget() {
     if (_selectedImageBytes != null) {
       return Image.memory(
@@ -245,7 +261,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } catch (e) {
           debugPrint('Error decodificando Base64: $e');
         }
-      } else if (_fotoUrl!.startsWith('http://') || _fotoUrl!.startsWith('https://')) {
+      } else if (_fotoUrl!.startsWith('http://') ||
+          _fotoUrl!.startsWith('https://')) {
         return Image.network(
           _fotoUrl!,
           fit: BoxFit.cover,
@@ -283,7 +300,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 10),
-
           Center(
             child: Stack(
               children: [

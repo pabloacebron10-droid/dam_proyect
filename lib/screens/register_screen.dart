@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:dam_proyect/models/perfil.dart';
 import 'package:dam_proyect/services/auth_service.dart';
-import '../models/perfil.dart';
-import '../services/firestore_service.dart';
+import 'package:dam_proyect/services/firestore_service.dart';
 
+/// Pantalla de Registro de Nuevo Usuario (`RegisterScreen`).
+///
+/// **Por qué:** Permite crear una nueva cuenta en Firebase Auth con nombre, correo
+/// y contraseña, creando inmediatamente el documento correspondiente en Cloud Firestore
+/// (`profiles`) para vincular el UID de la sesión con los datos de perfil público.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -13,10 +18,12 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _passwordVisible = false;
   bool _repeatPasswordVisible = false;
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repeatPasswordController = TextEditingController();
+
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
 
@@ -179,8 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
-                        _repeatPasswordVisible =
-                        !_repeatPasswordVisible;
+                        _repeatPasswordVisible = !_repeatPasswordVisible;
                       });
                     },
                     icon: Icon(
@@ -214,7 +220,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     }
 
                     try {
-                      final credential = await _authService.register(_emailController.text, _passwordController.text,);
+                      final credential = await _authService.register(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
 
                       final perfil = Perfil(
                         uId: credential!.user!.uid,
@@ -231,8 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           content: Text('Cuenta creada correctamente'),
                         ),
                       );
-                      Navigator.pushReplacementNamed(context, '/homescreen',);
-
+                      Navigator.pushReplacementNamed(context, '/homescreen');
                     } on Exception catch (e) {
                       if (!mounted) return;
 
@@ -245,7 +253,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       );
                     }
                   },
-
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
@@ -253,7 +260,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-
                   child: const Text(
                     'Crear cuenta',
                     style: TextStyle(
@@ -277,8 +283,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                        Navigator.pushReplacementNamed(context,'/login');
-                      },
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
                     child: const Text(
                       'Inicia sesión',
                       style: TextStyle(
@@ -294,13 +300,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _repeatPasswordController.dispose();
-
     super.dispose();
   }
 }

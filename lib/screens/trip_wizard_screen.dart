@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dam_proyect/models/trip_preferences.dart';
-import 'package:dam_proyect/screens/trip_detail_screen.dart';
 
+/// Pantalla Asistente de Viaje (`TripWizardScreen`).
+///
+/// **Por qué:** Guía al usuario paso a paso a través de 3 fases de selección:
+/// 1. Alojamiento (Tipo, presupuesto y ambiente).
+/// 2. Gastronomía (Estilo culinario y presupuesto por comida).
+/// 3. Ocio y Actividades (Intereses y ritmo de viaje).
+///
+/// Al finalizar, navega hacia `/trip_detail` transmitiendo la instancia construida
+/// de `TripPreferences` como `arguments` en el sistema de rutas con nombre.
 class TripWizardScreen extends StatefulWidget {
   final String city;
   final LatLng location;
@@ -116,7 +124,6 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               ],
             ),
           ),
-
           Expanded(
             child: PageView(
               controller: _pageController,
@@ -133,7 +140,6 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               ],
             ),
           ),
-
           Container(
             padding: const EdgeInsets.all(20),
             color: Colors.white,
@@ -224,9 +230,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 28),
-
           _buildSectionTitle('Presupuesto de alojamiento'),
           const SizedBox(height: 12),
           Row(
@@ -253,9 +257,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 28),
-
           _buildSectionTitle('¿Qué ambiente te gustaría? (Selección múltiple)'),
           const SizedBox(height: 12),
           Wrap(
@@ -313,9 +315,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 28),
-
           _buildSectionTitle('Presupuesto por comida'),
           const SizedBox(height: 12),
           Row(
@@ -366,9 +366,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               _buildMultiChip('👨‍👩‍👧 Actividades Familiares', 'familiar', _preferences.activityTypes),
             ],
           ),
-
           const SizedBox(height: 28),
-
           _buildSectionTitle('Ritmo del viaje'),
           const SizedBox(height: 12),
           Row(

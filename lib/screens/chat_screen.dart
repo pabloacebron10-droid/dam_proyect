@@ -6,6 +6,14 @@ import 'package:dam_proyect/models/mensaje.dart';
 import 'package:dam_proyect/models/perfil.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
 
+/// Pantalla de Conversación Individual / Chat (`ChatScreen`).
+///
+/// **Por qué:** Recibe el parámetro `contacto` (`Perfil`) vía rutas con nombre (`arguments`).
+/// Mantiene dos suscripciones en tiempo real (`StreamSubscription`) para mensajes enviados y recibidos,
+/// combinándolos y ordenándolos cronológicamente.
+///
+/// **Cancelación en `dispose()`:** Cancela de forma explícita las suscripciones para evitar fugas de memoria
+/// o escuchas fantasma cuando el usuario abandona la pantalla.
 class ChatScreen extends StatefulWidget {
   final Perfil contacto;
 
@@ -35,6 +43,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _startListeningMessages();
   }
 
+  /// Escucha streams de Firestore para mensajes entrantes y salientes.
+  ///
+  /// Combina los mensajes por su ID único, marca como leídos aquellos recibidos
+  /// que no lo estuvieran aún, y desplaza la lista automáticamente al fondo.
   void _startListeningMessages() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
@@ -92,6 +104,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// Anima el desplazador de la lista de chat hacia el último mensaje enviado o recibido.
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -104,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// Envía un nuevo mensaje a Cloud Firestore y limpia el campo de texto.
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -135,6 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Construye el widget de avatar del contacto soportando imágenes HTTP o cadenas Base64.
   Widget _buildAvatarWidget() {
     final url = widget.contacto.fotoUrl;
     if (url != null && url.isNotEmpty) {
@@ -155,7 +170,8 @@ class _ChatScreenState extends State<ChatScreen> {
           fit: BoxFit.cover,
           width: 40,
           height: 40,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.white),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.person, color: Colors.white),
         );
       }
     }

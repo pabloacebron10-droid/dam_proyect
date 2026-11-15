@@ -3,7 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dam_proyect/models/mensaje.dart';
 import 'package:dam_proyect/services/firestore_service.dart';
 
-
+/// Pantalla de Creación de Nuevo Mensaje (`NewMessageScreen`).
+///
+/// **Por qué:** Permite buscar a un usuario destinatario por su dirección de correo electrónico
+/// en Cloud Firestore mediante una consulta de lectura puntual (`getProfileByEmail`) y enviarle
+/// un nuevo mensaje directamente sin necesidad de haber abierto previamente su conversación.
 class NewMessageScreen extends StatefulWidget {
   const NewMessageScreen({super.key});
 
@@ -12,11 +16,9 @@ class NewMessageScreen extends StatefulWidget {
 }
 
 class _NewMessageScreenState extends State<NewMessageScreen> {
-
   final TextEditingController _destinatarioController = TextEditingController();
   final TextEditingController _mensajeController = TextEditingController();
   final FirestoreService _firestoreService = FirestoreService();
-
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +41,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             TextField(
               controller: _mensajeController,
               maxLines: 6,
@@ -53,9 +53,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 24),
-
             SizedBox(
               height: 55,
               child: ElevatedButton.icon(
@@ -76,7 +74,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
 
                   try {
                     final perfil =
-                    await _firestoreService.getProfileByEmail(email);
+                        await _firestoreService.getProfileByEmail(email);
 
                     if (perfil == null) {
                       if (!mounted) return;
@@ -135,9 +133,9 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                       SnackBar(
                         content: Text(
                           e.toString().replaceFirst(
-                            'Exception: ',
-                            '',
-                          ),
+                                'Exception: ',
+                                '',
+                              ),
                         ),
                       ),
                     );
