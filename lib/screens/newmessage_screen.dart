@@ -77,7 +77,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                         await _firestoreService.getProfileByEmail(email);
 
                     if (perfil == null) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -92,7 +92,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                     final usuarioActual = FirebaseAuth.instance.currentUser;
 
                     if (usuarioActual == null) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -115,7 +115,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
 
                     await _firestoreService.saveMessage(mensaje);
 
-                    if (!mounted) return;
+                    if (!context.mounted) return;
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -127,7 +127,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
 
                     Navigator.pop(context);
                   } on Exception catch (e) {
-                    if (!mounted) return;
+                    if (!context.mounted) return;
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

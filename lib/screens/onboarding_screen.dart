@@ -141,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           onPressed: () async {
                             await _onboardingService.setOnboardingSeen();
 
-                            if (!mounted) return;
+                            if (!context.mounted) return;
 
                             Navigator.pushReplacementNamed(
                               context,
@@ -190,7 +190,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: () async {
                       await _onboardingService.setOnboardingSeen();
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       Navigator.pushReplacementNamed(context, '/register');
                     },
                     child: const Text('Saltar'),

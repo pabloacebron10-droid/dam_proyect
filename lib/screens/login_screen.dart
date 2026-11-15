@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:dam_proyect/services/auth_service.dart';
+import 'package:dam_proyect/services/firestore_service.dart';
 
 /// Pantalla de Inicio de Sesión (`LoginScreen`).
 ///
-/// **Por qué:** Proporciona los controles de formulario para ingresar credenciales
-/// (email y contraseña), llamando a `AuthService.login` y navegando a `/homescreen`
-/// usando rutas con nombre si la autenticación es exitosa, o mostrando errores en pantalla con `SnackBar`.
+/// **Por qué:** Proporciona autenticación mediante correo/contraseña y mediante **Google Sign-In**
+/// (Bloque 1 de la rúbrica). Gestiona explícitamente la cancelación del selector OAuth por parte
+/// del usuario, los errores de red/credenciales y vincula automáticamente la cuenta de Google
+/// con su documento en la colección `profiles` de Cloud Firestore.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,10 +17,64 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _passwordVisible = false;
+  bool _isGoogleLoading = false;
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  /// Gestiona el flujo de inicio de sesión con Google, vinculando el perfil en Firestore.
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+    });
+
+    try {
+      final credential = await _authService.signInWithGoogle();
+
+      if (!mounted) return;
+
+      // Tratamiento explícito de la cancelación del usuario
+      if (credential == null || credential.user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inicio de sesión con Google cancelado por el usuario.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final user = credential.user!;
+      // Vincular / sincronizar cuenta de Google con el perfil en Cloud Firestore
+      await _firestoreService.syncGoogleUserProfile(
+        uId: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName,
+        photoUrl: user.photoURL,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, '/homescreen');
+    } on Exception catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,27 +83,27 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
-            vertical: 40,
+            vertical: 36,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Decoración superior con icono de candado
               Container(
-                height: 120,
-                width: 120,
+                height: 110,
+                width: 110,
                 decoration: BoxDecoration(
                   color: Colors.deepPurple.shade50,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.lock_outline,
-                  size: 55,
+                  size: 52,
                   color: Colors.deepPurple,
                 ),
               ),
 
-              const SizedBox(height: 35),
+              const SizedBox(height: 28),
 
               // 2. Título de bienvenida
               const Text(
@@ -59,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
               // 3. Subtítulo
               Text(
@@ -71,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
 
               // 4. Etiqueta Correo Electrónico
               const Text(
@@ -99,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
 
               // 6. Etiqueta Contraseña
               const Text(
@@ -139,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               // 8. Recuperación de contraseña
               Align(
@@ -150,27 +206,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 12),
 
-              // 9. Botón para Iniciar Sesión
+              // 9. Botón para Iniciar Sesión con Email/Password
               SizedBox(
-                height: 55,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: () async {
                     try {
                       await _authService.login(
-                        _emailController.text,
+                        _emailController.text.trim(),
                         _passwordController.text,
                       );
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       Navigator.pushReplacementNamed(
                         context,
                         '/homescreen',
                       );
                     } on Exception catch (e) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -198,9 +254,79 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 18),
 
-              // 10. Enlace a Registro
+              // Divisor visual OAuth
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'O accede con',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              // 10. Botón de Entrar con Google (Bloque 1 de la Rúbrica)
+              SizedBox(
+                height: 54,
+                child: OutlinedButton.icon(
+                  onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black87,
+                    side: BorderSide(color: Colors.grey.shade400, width: 1.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Colors.white,
+                  ),
+                  icon: _isGoogleLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : Container(
+                          width: 26,
+                          height: 26,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text(
+                            'G',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        ),
+                  label: Text(
+                    _isGoogleLoading
+                        ? 'Conectando con Google...'
+                        : 'Continuar con Google',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              // 11. Enlace a Registro
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

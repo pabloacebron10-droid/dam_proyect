@@ -233,7 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       await _firestoreService.saveProfile(perfil);
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -242,7 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       );
                       Navigator.pushReplacementNamed(context, '/homescreen');
                     } on Exception catch (e) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
